@@ -11,4 +11,7 @@ val databaseModule = module {
     }
     single { get<AppDatabase>().scheduleDao() }
     single { get<AppDatabase>().carBookDao() }
+    single { com.scheduleapp.core.platform.DatabaseBackupEngine(get(), get()) }
+    single { com.scheduleapp.core.platform.PlatformCalendarSync() }
+    single { com.scheduleapp.core.platform.PlatformNotificationScheduler() }
 }

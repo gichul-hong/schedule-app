@@ -9,6 +9,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         initDatabaseContext(this)
+        com.scheduleapp.core.platform.initPlatformContext(this)
         setContent {
             App()
         }

@@ -35,6 +35,9 @@ interface ScheduleDao {
     @Query("SELECT * FROM todo_items WHERE dueDate >= :start AND dueDate <= :end ORDER BY priority DESC")
     fun getTodosByDate(start: Long, end: Long): Flow<List<TodoItemEntity>>
 
+    @Query("SELECT * FROM todo_items WHERE id = :id")
+    suspend fun getTodoById(id: Long): TodoItemEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTodo(todo: TodoItemEntity): Long
 
@@ -48,6 +51,9 @@ interface ScheduleDao {
     @Query("SELECT * FROM routines ORDER BY createdAt ASC")
     fun getAllRoutines(): Flow<List<RoutineEntity>>
 
+    @Query("SELECT * FROM routines WHERE id = :id")
+    suspend fun getRoutineById(id: Long): RoutineEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRoutine(routine: RoutineEntity): Long
 
@@ -58,8 +64,17 @@ interface ScheduleDao {
     suspend fun deleteRoutine(routine: RoutineEntity)
 
     // Routine Logs
+    @Query("SELECT * FROM routine_logs")
+    fun getAllRoutineLogs(): Flow<List<RoutineLogEntity>>
+
     @Query("SELECT * FROM routine_logs WHERE date = :date")
     fun getRoutineLogsForDate(date: String): Flow<List<RoutineLogEntity>>
+
+    @Query("SELECT * FROM routine_logs WHERE routineId = :routineId")
+    fun getRoutineLogsForRoutine(routineId: Long): Flow<List<RoutineLogEntity>>
+
+    @Query("SELECT * FROM routine_logs WHERE routineId = :routineId AND date = :date LIMIT 1")
+    suspend fun getRoutineLog(routineId: Long, date: String): RoutineLogEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRoutineLog(log: RoutineLogEntity): Long
@@ -69,4 +84,29 @@ interface ScheduleDao {
 
     @Delete
     suspend fun deleteRoutineLog(log: RoutineLogEntity)
+
+    // Bulk Operations for Backup & Restore
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertEvents(events: List<ScheduleEventEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTodos(todos: List<TodoItemEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertRoutines(routines: List<RoutineEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertRoutineLogs(logs: List<RoutineLogEntity>)
+
+    @Query("DELETE FROM schedule_events")
+    suspend fun clearAllEvents()
+
+    @Query("DELETE FROM todo_items")
+    suspend fun clearAllTodos()
+
+    @Query("DELETE FROM routine_logs")
+    suspend fun clearAllRoutineLogs()
+
+    @Query("DELETE FROM routines")
+    suspend fun clearAllRoutines()
 }

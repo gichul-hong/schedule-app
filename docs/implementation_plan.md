@@ -106,14 +106,34 @@ flowchart TD
   * [x] `composeApp` (`commonMain`, `androidMain`, `iosMain`) 구조 생성 및 Gradle(Version Catalog `libs.versions.toml`) 설정
   * [x] Room KMP 2.7+ (8개 Entities, 2개 DAOs, `BundledSQLiteDriver`, expect/actual Platform DatabaseBuilder) 구현
   * [x] Koin DI (`DatabaseModule`) 및 `kotlinx-datetime`, `kotlinx-coroutines` 연동
-  * [ ] 하단 탭 네비게이션 구성: **[캘린더/할일] · [차계부] · [루틴/통계] · [설정]** (Phase 2에서 확장)
-* **Phase 2: 일정관리 (캘린더 + To-Do + 루틴) 핵심 기능 구현**
-  * 월간/주간/일간 캘린더 UI 및 할 일(To-Do)·루틴 체크리스트 구현
-* **Phase 3: 차계부 (주유/연비 계산 & 지출 기록) 구현**
-  * 차량 등록(`Vehicle`) 및 누적 주행거리 업데이트 로직 구현
-  * 주유/정비/기타 지출 입력 바텀시트 및 **평균 연비(km/L) 자동 계산기** 구현
-* **Phase 4: 정비/소모품 교체 주기 관리 & 캘린더 자동 연동 + 리포트 차트**
-  * 소모품별 남은 수명(km / 일수) 대시보드 및 **교체 예정일 → 캘린더 일정 자동 등록 UseCase** 구현
-  * 월별/연간 차량 유지비(주유·정비·주차·톨게이트·보험 등) 통계 차트 구현
-* **Phase 5: 플랫폼 네이티브 연동 (캘린더 동기화, 알림, 클라우드 백업)**
-  * Android/iOS 로컬 푸시 알림 및 시스템 캘린더 연동, 데이터 백업/복원 기능 구현
+  * [x] 하단 탭 네비게이션 구성: **[캘린더] · [할 일] · [루틴] · [타임라인]** (`App.kt` Material 3 NavigationBar)
+* **Phase 2: 일정관리 (캘린더 + To-Do + 루틴) 핵심 기능 구현** [✅ COMPLETED]
+  * [x] Schedule Domain 모델 (`ScheduleEvent`, `TodoItem`, `Routine`, `RoutineLog`, `Priority`)
+  * [x] 비트마스크 기반 연속 달성 계산기 `RoutineStreakEngine` 및 단위 테스트 구현
+  * [x] `ScheduleRepository` & `ScheduleRepositoryImpl` (Room `ScheduleDao` 연동)
+  * [x] ViewModels (`CalendarViewModel`, `TodoViewModel`, `RoutineViewModel`, `TimelineViewModel`)
+  * [x] Compose Multiplatform Material 3 화면 & 다이얼로그 (`CalendarScreen`, `TodoScreen`, `RoutineScreen`, `IntegratedTimelineScreen`, 바텀시트/다이얼로그)
+  * [x] Koin DI 모듈 (`ScheduleModule`) 및 `App.kt` 탭 네비게이션 연동
+* **Phase 3: 차계부 (주유/연비 계산 & 지출 기록) 구현** [✅ COMPLETED]
+  * [x] 차량 등록(`Vehicle`), 다차량 지원 및 누적 주행거리 anti-rollback 검증 로직 구현
+  * [x] 주유/정비/기타 지출 입력 바텀시트(`AddFuelBottomSheet`, `AddExpenseBottomSheet`, `VehicleProfileDialog`) 구현
+  * [x] **Full-to-Full 평균 연비(km/L) & 1km 주행비 자동 계산기 `FuelEfficiencyEngine`** 및 단위 테스트 구현
+  * [x] `CarBookRepository` & `CarBookRepositoryImpl` Room DAO 연동 및 `CarBookViewModel` 리액티브 상태 관리
+  * [x] Compose Multiplatform Material 3 화면 `CarBookScreen`, Koin DI `CarBookModule`, `App.kt` 하단 탭 네비게이션 연동
+* **Phase 4: 정비/소모품 교체 주기 관리 & 캘린더 자동 연동 + 리포트 차트** [✅ COMPLETED]
+  * [x] Maintenance Domain 모델(`MaintenanceItem`, `MaintenanceStatus`, `MaintenancePreset`)
+  * [x] **교체 주기 이중 관리 마모율 계산기 `MaintenanceWearEngine`** (주행거리/기간 max 마모율, 잔여거리/일수, 다음 교체 예정일 자동 산출) 및 단위 테스트 구현
+  * [x] **정비 주기 ↔ 캘린더 양방향 연동 UseCase `SyncMaintenanceToScheduleUseCase`** (정비 항목 등록/변경 시 `ScheduleEvent` 캘린더 자동 등록, 정비 완료 시 지출 원장 기록 및 캘린더 일정 갱신)
+  * [x] **월별/연간 유지비 집계 엔진 `ExpenseReportEngine`** (12개월 지출 추이, 카테고리별 비중 퍼센티지, 총액/월평균 통계)
+  * [x] ViewModels (`MaintenanceViewModel`, `ExpenseReportViewModel`) 및 Koin DI 모듈 (`MaintenanceModule`, `ReportModule`)
+  * [x] Compose Multiplatform Material 3 화면 & 다이얼로그 (`MaintenanceScreen`, `AddMaintenanceDialog`, `LogMaintenanceDialog`, `ExpenseReportScreen`)
+  * [x] Custom Canvas 차트 구현 (월별 막대그래프 + 카테고리 도넛 차트 및 컬러 범례)
+  * [x] `CarBookScreen` 4개 탭 연동 (`[주유 기록]` · `[정비/소모품]` · `[지출 내역]` · `[유지비 리포트]`)
+* **Phase 5: 플랫폼 네이티브 연동 (캘린더 동기화, 알림, 로컬/클라우드 백업) 및 프로덕션 폴리싱** [✅ COMPLETED]
+  * [x] **모던 머티리얼 3 테마 시스템 (`core/theme/`)**: Light/Dark 다이내믹 테마 팔레트, 인디고/에메랄드/앰버/크림슨 액센트 컬러, 통일된 타이포그래피(`Type.kt`) 및 16dp 라운드 쉐이프(`Theme.kt`)
+  * [x] **설정 및 환경설정 화면 (`features/settings/`)**: 화면 테마 선택(시스템/라이트/다크), 기본 차량 선택 드롭다운, 거리/연료 단위(km/mi, L/gal), JSON 스냅샷 백업/복원, 앱 및 개발자 정보
+  * [x] **플랫폼 네이티브 캘린더 연동 `PlatformCalendarSync`**: commonMain `expect class`, Android `CalendarContract`, iOS Apple `EventKit` (`EKEventStore`) 연동
+  * [x] **플랫폼 로컬 알림 스케줄러 `PlatformNotificationScheduler`**: commonMain `expect class`, Android `AlarmManager` + `NotificationChannel`, iOS `UNUserNotificationCenter` 연동
+  * [x] **Room 로컬 DB JSON 스냅샷 엔진 `DatabaseBackupEngine`**: 8개 엔티티 전체 데이터 무의존성 JSON 직렬화/파서, 트랜잭션 데이터 복원 및 무결성 검증
+  * [x] **하단 5개 탭 네비게이션 최종 완성 (`App.kt`)**: [캘린더 & 할 일] · [스마트 차계부] · [루틴 & 습관] · [통합 타임라인] · [설정] 통합 연동
+  * [x] **단위 테스트 및 QA 검증**: `DatabaseBackupEngineTest`, `SettingsViewModelTest` 포함 전체 E2E/단위 테스트 구축 완료

@@ -44,10 +44,19 @@ interface CarBookDao {
     @Update
     suspend fun updateExpense(expense: CarExpenseLogEntity)
 
+    @Query("SELECT * FROM car_expense_logs WHERE id = :id")
+    suspend fun getExpenseById(id: Long): CarExpenseLogEntity?
+
+    @Query("DELETE FROM car_expense_logs WHERE id = :id")
+    suspend fun deleteExpenseById(id: Long)
+
     @Delete
     suspend fun deleteExpense(expense: CarExpenseLogEntity)
 
     // Fuel Details
+    @Query("SELECT * FROM fuel_details")
+    fun getAllFuelDetails(): Flow<List<FuelDetailEntity>>
+
     @Query("SELECT * FROM fuel_details WHERE expenseId = :expenseId")
     suspend fun getFuelDetail(expenseId: Long): FuelDetailEntity?
 
@@ -75,4 +84,35 @@ interface CarBookDao {
 
     @Delete
     suspend fun deleteMaintenanceItem(item: MaintenanceItemEntity)
+
+    // Bulk & Global Queries for Backup & Restore
+    @Query("SELECT * FROM car_expense_logs ORDER BY date DESC")
+    fun getAllExpenses(): Flow<List<CarExpenseLogEntity>>
+
+    @Query("SELECT * FROM maintenance_items ORDER BY id ASC")
+    fun getAllMaintenanceItems(): Flow<List<MaintenanceItemEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertVehicles(vehicles: List<VehicleEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertExpenses(expenses: List<CarExpenseLogEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertFuelDetails(details: List<FuelDetailEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMaintenanceItems(items: List<MaintenanceItemEntity>)
+
+    @Query("DELETE FROM fuel_details")
+    suspend fun clearAllFuelDetails()
+
+    @Query("DELETE FROM car_expense_logs")
+    suspend fun clearAllExpenses()
+
+    @Query("DELETE FROM maintenance_items")
+    suspend fun clearAllMaintenanceItems()
+
+    @Query("DELETE FROM vehicles")
+    suspend fun clearAllVehicles()
 }

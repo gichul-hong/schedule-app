@@ -16,5 +16,7 @@
     <string>1.0.0</string>
     <key>CFBundleVersion</key>
     <string>1</string>
+    <key>NSCalendarsUsageDescription</key>
+    <string>차량 정비 및 개인 일정을 캘린더와 동기화하기 위해 접근 권한이 필요합니다.</string>
 </dict>
 </plist>
