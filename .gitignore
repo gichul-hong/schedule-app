@@ -1,0 +1,45 @@
+*.iml
+.gradle
+/build
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build
+!**/src/test/**/build
+
+### IntelliJ IDEA ###
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/libraries/
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/datasources/
+.idea/shelf/
+.idea/vcs.xml
+
+### Android ###
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+local.properties
+.navigation
+captures/
+.externalNativeBuild
+.cxx/
+
+### iOS / Xcode ###
+*.xcworkspace
+xcuserdata/
+*.xcuserdatad
+*.mode1v3
+*.mode2v3
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+.DS_Store
+
+### Build outputs ###
+**/build/
+.kotlin/

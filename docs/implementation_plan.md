@@ -102,10 +102,11 @@ flowchart TD
 
 ## 4. 단계별 개발 로드맵 (Phased Roadmap)
 
-* **Phase 1: KMP(Compose Multiplatform) 프로젝트 초기 세팅 및 공통 기반 구축**
-  * `composeApp` (`commonMain`, `androidMain`, `iosMain`) 구조 생성 및 Gradle(Version Catalog) 설정
-  * Room KMP, Koin DI, Navigation, `kotlinx-datetime` 연동
-  * 하단 탭 네비게이션 구성: **[캘린더/할일] · [차계부] · [루틴/통계] · [설정]**
+* **Phase 1: KMP(Compose Multiplatform) 프로젝트 초기 세팅 및 공통 기반 구축** [✅ COMPLETED]
+  * [x] `composeApp` (`commonMain`, `androidMain`, `iosMain`) 구조 생성 및 Gradle(Version Catalog `libs.versions.toml`) 설정
+  * [x] Room KMP 2.7+ (8개 Entities, 2개 DAOs, `BundledSQLiteDriver`, expect/actual Platform DatabaseBuilder) 구현
+  * [x] Koin DI (`DatabaseModule`) 및 `kotlinx-datetime`, `kotlinx-coroutines` 연동
+  * [ ] 하단 탭 네비게이션 구성: **[캘린더/할일] · [차계부] · [루틴/통계] · [설정]** (Phase 2에서 확장)
 * **Phase 2: 일정관리 (캘린더 + To-Do + 루틴) 핵심 기능 구현**
   * 월간/주간/일간 캘린더 UI 및 할 일(To-Do)·루틴 체크리스트 구현
 * **Phase 3: 차계부 (주유/연비 계산 & 지출 기록) 구현**
