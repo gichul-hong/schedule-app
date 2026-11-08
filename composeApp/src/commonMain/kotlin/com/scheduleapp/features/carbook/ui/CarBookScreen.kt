@@ -2,9 +2,11 @@ package com.scheduleapp.features.carbook.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -41,9 +43,18 @@ fun CarBookScreen(
     var showFuelSheet by remember { mutableStateOf(false) }
     var showExpenseSheet by remember { mutableStateOf(false) }
     var showVehicleProfileDialog by remember { mutableStateOf(false) }
+    var isAddingNewVehicle by remember { mutableStateOf(false) }
     var showFabMenu by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Synchronize selected vehicle across Maintenance and Expense Report ViewModels
+    LaunchedEffect(state.selectedVehicle) {
+        state.selectedVehicle?.let { vehicle ->
+            maintenanceViewModel.selectVehicle(vehicle)
+            expenseReportViewModel.selectVehicle(vehicle)
+        }
+    }
 
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let { msg ->
@@ -109,6 +120,23 @@ fun CarBookScreen(
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Multi-Vehicle Switcher Bar (Always visible across all 4 tabs for 2+ car owners)
+            MultiVehicleSwitcherBar(
+                vehicles = state.vehicles,
+                selectedVehicle = state.selectedVehicle,
+                onSelectVehicle = { vehicle ->
+                    viewModel.selectVehicle(vehicle)
+                    maintenanceViewModel.selectVehicle(vehicle)
+                    expenseReportViewModel.selectVehicle(vehicle)
+                },
+                onAddVehicleClick = {
+                    isAddingNewVehicle = true
+                    showVehicleProfileDialog = true
+                }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             // Vehicle Header Card shown on Fuel and Expense tabs
             if (isFuelOrExpenseTab) {
                 val vehicle = state.selectedVehicle
@@ -118,7 +146,10 @@ fun CarBookScreen(
                         averageKmPerL = state.averageKmPerL,
                         costPerKm = state.costPerKm,
                         totalFuelCost = state.totalFuelCost,
-                        onEditClick = { showVehicleProfileDialog = true }
+                        onEditClick = {
+                            isAddingNewVehicle = false
+                            showVehicleProfileDialog = true
+                        }
                     )
                 } else {
                     Card(
@@ -238,12 +269,59 @@ fun CarBookScreen(
         )
     }
 
-    if (showVehicleProfileDialog && state.selectedVehicle != null) {
+    if (showVehicleProfileDialog) {
         VehicleProfileDialog(
-            initialVehicle = state.selectedVehicle,
+            initialVehicle = if (isAddingNewVehicle) null else state.selectedVehicle,
+            canDelete = !isAddingNewVehicle && state.vehicles.size > 1,
             onDismiss = { showVehicleProfileDialog = false },
             onSave = { updated ->
                 viewModel.saveVehicleProfile(updated)
+            },
+            onDelete = { toDelete ->
+                viewModel.deleteVehicle(toDelete)
+            }
+        )
+    }
+}
+
+@Composable
+private fun MultiVehicleSwitcherBar(
+    vehicles: List<Vehicle>,
+    selectedVehicle: Vehicle?,
+    onSelectVehicle: (Vehicle) -> Unit,
+    onAddVehicleClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        vehicles.forEachIndexed { index, vehicle ->
+            val isSelected = selectedVehicle?.id == vehicle.id
+            val carIcon = if (index == 0) "🚗" else "🚙"
+            FilterChip(
+                selected = isSelected,
+                onClick = { onSelectVehicle(vehicle) },
+                label = {
+                    Text(
+                        text = "$carIcon ${vehicle.name} (${vehicle.model})",
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        fontSize = 13.sp
+                    )
+                }
+            )
+        }
+
+        AssistChip(
+            onClick = onAddVehicleClick,
+            label = {
+                Text(
+                    text = "+ 차량 추가",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 12.sp
+                )
             }
         )
     }

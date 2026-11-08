@@ -36,16 +36,25 @@ class CarBookViewModel(
         scope.launch {
             carBookRepository.getAllVehicles().collect { vehicles ->
                 if (vehicles.isEmpty()) {
-                    // Seed initial default vehicle for new users
-                    val defaultVehicle = Vehicle(
-                        name = "내 차량",
+                    // Seed 2 initial vehicles for 2-car ownership out of the box
+                    val primaryVehicle = Vehicle(
+                        name = "1호차 (메인)",
                         model = "아반떼 CN7",
                         fuelType = FuelType.GASOLINE,
                         initialOdometer = 10000.0,
                         currentOdometer = 10000.0,
                         isDefault = true
                     )
-                    carBookRepository.insertVehicle(defaultVehicle)
+                    val secondaryVehicle = Vehicle(
+                        name = "2호차 (세컨)",
+                        model = "쏘렌토 MQ4",
+                        fuelType = FuelType.HYBRID,
+                        initialOdometer = 25000.0,
+                        currentOdometer = 25000.0,
+                        isDefault = false
+                    )
+                    carBookRepository.insertVehicle(primaryVehicle)
+                    carBookRepository.insertVehicle(secondaryVehicle)
                     return@collect
                 }
 
@@ -184,6 +193,11 @@ class CarBookViewModel(
     fun saveVehicleProfile(vehicle: Vehicle) {
         scope.launch {
             try {
+                if (vehicle.isDefault) {
+                    _state.value.vehicles.filter { it.isDefault && it.id != vehicle.id }.forEach { other ->
+                        carBookRepository.updateVehicle(other.copy(isDefault = false))
+                    }
+                }
                 if (vehicle.id == 0L) {
                     val newId = carBookRepository.insertVehicle(vehicle)
                     val inserted = carBookRepository.getVehicleById(newId)

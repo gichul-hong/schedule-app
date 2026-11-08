@@ -91,7 +91,8 @@ class FakeCarBookRepository : CarBookRepository {
         }
     }
 
-    override fun getExpensesForVehicle(vehicleId: Long): Flow<List<CarExpenseLog>> = flowOf(expenses)
+    override fun getAllExpenses(): Flow<List<CarExpenseLog>> = flowOf(expenses)
+    override fun getExpensesForVehicle(vehicleId: Long): Flow<List<CarExpenseLog>> = flowOf(expenses.filter { it.vehicleId == vehicleId })
     override fun getExpensesForVehicleInRange(vehicleId: Long, start: Long, end: Long): Flow<List<CarExpenseLog>> = flowOf(expenses)
     override fun getExpensesByType(vehicleId: Long, type: ExpenseType): Flow<List<CarExpenseLog>> = flowOf(expenses.filter { it.type == type })
     override suspend fun insertExpense(expense: CarExpenseLog): Long {
@@ -159,10 +160,56 @@ class SyncMaintenanceToScheduleUseCaseTest {
         val event = scheduleRepo.getEventById(savedItem.scheduledEventId!!)
         assertNotNull(event)
         assertEquals(SyncMaintenanceToScheduleUseCase.CATEGORY_CAR_MAINTENANCE, event.category)
-        assertEquals("[차량 정비] 엔진오일 & 필터 교체 주기 도래", event.title)
+        assertEquals("[차량 정비 - Sonata] 엔진오일 & 필터 교체 주기 도래", event.title)
         assertEquals(createdId, event.linkedCarRecordId)
         val expectedDueDate = DateTimeUtils.startOfDayMillis(LocalDate(2027, 1, 1))
         assertEquals(expectedDueDate, event.startTime)
+    }
+
+    @Test
+    fun testMultiVehicle_TwoCarsCreateDistinctCalendarEventsAndIndependentOdometers() = runTest {
+        val scheduleRepo = FakeScheduleRepository()
+        val carBookRepo = FakeCarBookRepository()
+        val useCase = SyncMaintenanceToScheduleUseCase(carBookRepo, scheduleRepo)
+
+        val car1 = Vehicle(id = 1L, name = "1호차 (메인)", model = "아반떼 CN7", fuelType = FuelType.GASOLINE, initialOdometer = 10000.0, currentOdometer = 15000.0, isDefault = true)
+        val car2 = Vehicle(id = 2L, name = "2호차 (세컨)", model = "쏘렌토 MQ4", fuelType = FuelType.HYBRID, initialOdometer = 25000.0, currentOdometer = 32000.0, isDefault = false)
+        carBookRepo.vehicles.add(car1)
+        carBookRepo.vehicles.add(car2)
+
+        val itemCar1Id = useCase.createMaintenanceItem(
+            MaintenanceItem(
+                vehicleId = 1L,
+                partName = "엔진오일",
+                cycleKm = 10000.0,
+                cycleMonths = 12,
+                lastReplacedDate = DateTimeUtils.startOfDayMillis(LocalDate(2026, 1, 1)),
+                lastReplacedOdometer = 10000.0,
+                nextDueDate = 0L
+            )
+        )
+        val itemCar2Id = useCase.createMaintenanceItem(
+            MaintenanceItem(
+                vehicleId = 2L,
+                partName = "에어컨 필터",
+                cycleKm = 15000.0,
+                cycleMonths = 6,
+                lastReplacedDate = DateTimeUtils.startOfDayMillis(LocalDate(2026, 2, 1)),
+                lastReplacedOdometer = 25000.0,
+                nextDueDate = 0L
+            )
+        )
+
+        val savedCar1Item = carBookRepo.getMaintenanceItemById(itemCar1Id)!!
+        val savedCar2Item = carBookRepo.getMaintenanceItemById(itemCar2Id)!!
+
+        val eventCar1 = scheduleRepo.getEventById(savedCar1Item.scheduledEventId!!)!!
+        val eventCar2 = scheduleRepo.getEventById(savedCar2Item.scheduledEventId!!)!!
+
+        assertEquals("[차량 정비 - 1호차 (메인)] 엔진오일 교체 주기 도래", eventCar1.title)
+        assertEquals("[차량 정비 - 2호차 (세컨)] 에어컨 필터 교체 주기 도래", eventCar2.title)
+        assertTrue(eventCar1.memo!!.contains("1호차 (메인)"))
+        assertTrue(eventCar2.memo!!.contains("2호차 (세컨)"))
     }
 
     @Test

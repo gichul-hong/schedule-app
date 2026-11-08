@@ -54,6 +54,7 @@ class SettingsViewModelTest {
         override suspend fun deleteVehicle(vehicle: Vehicle) {}
         override suspend fun updateVehicleOdometer(vehicleId: Long, newOdometer: Double) {}
 
+        override fun getAllExpenses(): Flow<List<CarExpenseLog>> = flowOf(emptyList())
         override fun getExpensesForVehicle(vehicleId: Long): Flow<List<CarExpenseLog>> = flowOf(emptyList())
         override fun getExpensesForVehicleInRange(vehicleId: Long, start: Long, end: Long): Flow<List<CarExpenseLog>> = flowOf(emptyList())
         override fun getExpensesByType(vehicleId: Long, type: ExpenseType): Flow<List<CarExpenseLog>> = flowOf(emptyList())

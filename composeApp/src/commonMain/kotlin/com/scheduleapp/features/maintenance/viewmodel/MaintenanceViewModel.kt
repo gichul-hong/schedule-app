@@ -36,19 +36,30 @@ class MaintenanceViewModel(
         scope.launch {
             carBookRepository.getAllVehicles().collect { vehicles ->
                 if (vehicles.isEmpty()) {
-                    _state.update { it.copy(isLoading = false) }
+                    _state.update { it.copy(vehicles = emptyList(), vehicle = null, isLoading = false) }
                     return@collect
                 }
 
-                val currentVehicle = vehicles.firstOrNull { it.isDefault } ?: vehicles.first()
-                val vehicleChanged = _state.value.vehicle?.id != currentVehicle.id
+                val selectedId = _state.value.vehicle?.id
+                val currentVehicle = vehicles.find { it.id == selectedId }
+                    ?: vehicles.firstOrNull { it.isDefault }
+                    ?: vehicles.first()
+                val vehicleChanged = _state.value.vehicle?.id != currentVehicle.id ||
+                    _state.value.vehicle?.currentOdometer != currentVehicle.currentOdometer
 
-                _state.update { it.copy(vehicle = currentVehicle) }
+                _state.update { it.copy(vehicles = vehicles, vehicle = currentVehicle) }
 
                 if (vehicleChanged || itemsJob == null) {
                     observeItems(currentVehicle)
                 }
             }
+        }
+    }
+
+    fun selectVehicle(vehicle: Vehicle) {
+        if (_state.value.vehicle?.id != vehicle.id || _state.value.vehicle?.currentOdometer != vehicle.currentOdometer) {
+            _state.update { it.copy(vehicle = vehicle) }
+            observeItems(vehicle)
         }
     }
 

@@ -15,8 +15,10 @@ import com.scheduleapp.domain.carbook.model.Vehicle
 @Composable
 fun VehicleProfileDialog(
     initialVehicle: Vehicle? = null,
+    canDelete: Boolean = false,
     onDismiss: () -> Unit,
-    onSave: (Vehicle) -> Unit
+    onSave: (Vehicle) -> Unit,
+    onDelete: ((Vehicle) -> Unit)? = null
 ) {
     var name by remember { mutableStateOf(initialVehicle?.name ?: "") }
     var model by remember { mutableStateOf(initialVehicle?.model ?: "") }
@@ -27,7 +29,7 @@ fun VehicleProfileDialog(
     var currentOdoText by remember {
         mutableStateOf(initialVehicle?.currentOdometer?.let { if (it > 0) it.toInt().toString() else "" } ?: "")
     }
-    var isDefault by remember { mutableStateOf(initialVehicle?.isDefault ?: true) }
+    var isDefault by remember { mutableStateOf(initialVehicle?.isDefault ?: false) }
     var validationError by remember { mutableStateOf<String?>(null) }
 
     val scrollState = rememberScrollState()
@@ -110,6 +112,36 @@ fun VehicleProfileDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "대표(기본) 차량으로 설정",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Switch(
+                        checked = isDefault,
+                        onCheckedChange = { isDefault = it }
+                    )
+                }
+
+                if (canDelete && initialVehicle != null && initialVehicle.id != 0L && onDelete != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = {
+                            onDelete(initialVehicle)
+                            onDismiss()
+                        },
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("이 차량 삭제")
+                    }
+                }
 
                 if (validationError != null) {
                     Spacer(modifier = Modifier.height(8.dp))

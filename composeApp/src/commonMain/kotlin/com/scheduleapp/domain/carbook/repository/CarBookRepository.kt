@@ -19,6 +19,7 @@ interface CarBookRepository {
     suspend fun updateVehicleOdometer(vehicleId: Long, newOdometer: Double)
 
     // General Car Expense Logs
+    fun getAllExpenses(): Flow<List<CarExpenseLog>>
     fun getExpensesForVehicle(vehicleId: Long): Flow<List<CarExpenseLog>>
     fun getExpensesForVehicleInRange(vehicleId: Long, start: Long, end: Long): Flow<List<CarExpenseLog>>
     fun getExpensesByType(vehicleId: Long, type: ExpenseType): Flow<List<CarExpenseLog>>

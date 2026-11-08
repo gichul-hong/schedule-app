@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.scheduleapp.domain.carbook.engine.ExpenseCategorySlice
 import com.scheduleapp.domain.carbook.engine.MonthlyExpenseBarData
 import com.scheduleapp.features.reports.viewmodel.ExpenseReportViewModel
+import com.scheduleapp.features.reports.viewmodel.VehicleSpendShare
 import kotlin.math.round
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -45,6 +46,37 @@ fun ExpenseReportScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
+            // Multi-Vehicle Scope Selector: Selected Vehicle vs Combined All Vehicles
+            if (state.vehicles.size > 1) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FilterChip(
+                        selected = !state.isAllVehiclesMode,
+                        onClick = { viewModel.setAllVehiclesMode(false) },
+                        label = {
+                            Text(
+                                text = "🚗 ${state.vehicle?.name ?: "선택 차량"} 개별",
+                                fontWeight = if (!state.isAllVehiclesMode) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    )
+                    FilterChip(
+                        selected = state.isAllVehiclesMode,
+                        onClick = { viewModel.setAllVehiclesMode(true) },
+                        label = {
+                            Text(
+                                text = "🚘 전체 차량 합산 (${state.vehicles.size}대 통합)",
+                                fontWeight = if (state.isAllVehiclesMode) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             // Year & Month Filter Controls
             YearAndMonthSelector(
                 selectedYear = state.selectedYear,
@@ -58,6 +90,7 @@ fun ExpenseReportScreen(
 
             // Summary Metric Cards
             ExpenseSummaryCards(
+                scopeLabel = if (state.isAllVehiclesMode) "전체 차량(${state.vehicles.size}대) 합산" else (state.vehicle?.name ?: "선택 차량"),
                 totalSpend = state.summary.totalSpend,
                 monthlyAverage = state.summary.monthlyAverage,
                 fuelTotal = state.summary.fuelTotal,
@@ -65,6 +98,19 @@ fun ExpenseReportScreen(
                 fixedCostsTotal = state.summary.fixedCostsTotal,
                 isMonthSelected = state.selectedMonth != null
             )
+
+            // Per-Vehicle Spend Comparison Card (when 2+ cars exist)
+            if (state.vehicleSpendComparison.size > 1) {
+                Spacer(modifier = Modifier.height(16.dp))
+                VehicleComparisonCard(
+                    comparisons = state.vehicleSpendComparison,
+                    selectedVehicleId = if (state.isAllVehiclesMode) null else state.vehicle?.id,
+                    onSelectVehicle = { vehicle ->
+                        viewModel.setAllVehiclesMode(false)
+                        viewModel.selectVehicle(vehicle)
+                    }
+                )
+            }
 
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -217,6 +263,7 @@ private fun YearAndMonthSelector(
 
 @Composable
 private fun ExpenseSummaryCards(
+    scopeLabel: String,
     totalSpend: Double,
     monthlyAverage: Double,
     fuelTotal: Double,
@@ -233,7 +280,7 @@ private fun ExpenseSummaryCards(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = if (isMonthSelected) "선택 월 총 유지비" else "연간 총 유지비",
+                text = "$scopeLabel • ${if (isMonthSelected) "선택 월 총 유지비" else "연간 총 유지비"}",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
@@ -266,6 +313,79 @@ private fun ExpenseSummaryCards(
                 SubStatColumn(title = "주유비", amount = fuelTotal, icon = "⛽")
                 SubStatColumn(title = "정비/수리", amount = maintenanceTotal, icon = "🔧")
                 SubStatColumn(title = "고정비", amount = fixedCostsTotal, icon = "🅿️")
+            }
+        }
+    }
+}
+
+@Composable
+private fun VehicleComparisonCard(
+    comparisons: List<VehicleSpendShare>,
+    selectedVehicleId: Long?,
+    onSelectVehicle: (com.scheduleapp.domain.carbook.model.Vehicle) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "🚘 차량별 유지비 비교 (${comparisons.size}대)",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+
+            comparisons.forEachIndexed { idx, share ->
+                val isHighlighted = selectedVehicleId == share.vehicle.id
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { onSelectVehicle(share.vehicle) }
+                        .padding(vertical = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = if (idx == 0) "🚗 ${share.vehicle.name}" else "🚙 ${share.vehicle.name}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (isHighlighted) FontWeight.Bold else FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "(${share.vehicle.model})",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Text(
+                            text = "${formatCurrency(share.amount)} (${share.percentage}%)",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    LinearProgressIndicator(
+                        progress = { (share.percentage / 100.0).toFloat().coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = if (idx == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
+                        trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                    )
+                }
+                if (idx < comparisons.lastIndex) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
             }
         }
     }

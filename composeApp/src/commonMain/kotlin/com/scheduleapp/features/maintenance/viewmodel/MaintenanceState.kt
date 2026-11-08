@@ -10,6 +10,7 @@ data class MaintenanceItemWithWear(
 )
 
 data class MaintenanceState(
+    val vehicles: List<Vehicle> = emptyList(),
     val vehicle: Vehicle? = null,
     val items: List<MaintenanceItemWithWear> = emptyList(),
     val overdueCount: Int = 0,

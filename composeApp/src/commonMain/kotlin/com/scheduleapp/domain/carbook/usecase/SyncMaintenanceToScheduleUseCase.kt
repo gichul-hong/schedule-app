@@ -27,9 +27,10 @@ class SyncMaintenanceToScheduleUseCase(
         val initialItem = item.copy(nextDueDate = nextDueDate)
         val createdItemId = carBookRepository.insertMaintenanceItem(initialItem)
 
-        // Create linked ScheduleEvent
-        val eventTitle = "[차량 정비] ${item.partName} 교체 주기 도래"
-        val memo = "소모품 교체 주기: ${item.cycleKm.toLong()} km / ${item.cycleMonths}개월"
+        // Create linked ScheduleEvent with vehicle name tag for multi-vehicle clarity
+        val vehicle = carBookRepository.getVehicleById(item.vehicleId)
+        val eventTitle = buildEventTitle(vehicle?.name, item.partName)
+        val memo = buildEventMemo(vehicle?.name, vehicle?.model, item.cycleKm, item.cycleMonths)
         val scheduleEvent = ScheduleEvent(
             title = eventTitle,
             startTime = nextDueDate,
@@ -56,8 +57,9 @@ class SyncMaintenanceToScheduleUseCase(
         var eventId = item.scheduledEventId
 
         val existingEvent = if (eventId != null) scheduleRepository.getEventById(eventId) else null
-        val eventTitle = "[차량 정비] ${item.partName} 교체 주기 도래"
-        val memo = "소모품 교체 주기: ${item.cycleKm.toLong()} km / ${item.cycleMonths}개월"
+        val vehicle = carBookRepository.getVehicleById(item.vehicleId)
+        val eventTitle = buildEventTitle(vehicle?.name, item.partName)
+        val memo = buildEventMemo(vehicle?.name, vehicle?.model, item.cycleKm, item.cycleMonths)
 
         if (existingEvent != null) {
             val updatedEvent = existingEvent.copy(
@@ -125,8 +127,8 @@ class SyncMaintenanceToScheduleUseCase(
         // 4. Reschedule or create linked calendar event
         var eventId = item.scheduledEventId
         val existingEvent = if (eventId != null) scheduleRepository.getEventById(eventId) else null
-        val eventTitle = "[차량 정비] ${item.partName} 교체 주기 도래"
-        val eventMemo = "소모품 교체 주기: ${item.cycleKm.toLong()} km / ${item.cycleMonths}개월"
+        val eventTitle = buildEventTitle(vehicle?.name, item.partName)
+        val eventMemo = buildEventMemo(vehicle?.name, vehicle?.model, item.cycleKm, item.cycleMonths)
 
         if (existingEvent != null) {
             val updatedEvent = existingEvent.copy(
@@ -173,6 +175,23 @@ class SyncMaintenanceToScheduleUseCase(
             }
             carBookRepository.deleteMaintenanceItem(item)
         }
+    }
+
+    private fun buildEventTitle(vehicleName: String?, partName: String): String {
+        return if (!vehicleName.isNullOrBlank()) {
+            "[차량 정비 - $vehicleName] $partName 교체 주기 도래"
+        } else {
+            "[차량 정비] $partName 교체 주기 도래"
+        }
+    }
+
+    private fun buildEventMemo(vehicleName: String?, vehicleModel: String?, cycleKm: Double, cycleMonths: Int): String {
+        val vehiclePrefix = if (!vehicleName.isNullOrBlank()) {
+            "대상 차량: $vehicleName${if (!vehicleModel.isNullOrBlank()) " ($vehicleModel)" else ""} | "
+        } else {
+            ""
+        }
+        return "${vehiclePrefix}소모품 교체 주기: ${cycleKm.toLong()} km / ${cycleMonths}개월"
     }
 
     companion object {

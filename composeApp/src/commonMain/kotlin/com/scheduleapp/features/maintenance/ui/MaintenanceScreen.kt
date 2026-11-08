@@ -67,6 +67,7 @@ fun MaintenanceScreen(
 
             // Maintenance Status Overview Banner
             MaintenanceSummaryBanner(
+                vehicleName = state.vehicle?.name,
                 totalCount = state.items.size,
                 overdueCount = state.overdueCount,
                 warningCount = state.warningCount,
@@ -175,6 +176,7 @@ fun MaintenanceScreen(
 
 @Composable
 private fun MaintenanceSummaryBanner(
+    vehicleName: String?,
     totalCount: Int,
     overdueCount: Int,
     warningCount: Int,
@@ -195,7 +197,7 @@ private fun MaintenanceSummaryBanner(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "소모품 관리 상태",
+                    text = if (!vehicleName.isNullOrBlank()) "$vehicleName • 소모품 관리 상태" else "소모품 관리 상태",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )

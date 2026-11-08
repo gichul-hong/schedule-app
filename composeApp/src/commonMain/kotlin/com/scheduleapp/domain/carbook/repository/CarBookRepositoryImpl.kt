@@ -59,6 +59,12 @@ class CarBookRepositoryImpl(
 
     // --- Car Expense Logs ---
 
+    override fun getAllExpenses(): Flow<List<CarExpenseLog>> {
+        return carBookDao.getAllExpenses().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
     override fun getExpensesForVehicle(vehicleId: Long): Flow<List<CarExpenseLog>> {
         return carBookDao.getExpensesForVehicle(vehicleId).map { entities ->
             entities.map { it.toDomain() }
