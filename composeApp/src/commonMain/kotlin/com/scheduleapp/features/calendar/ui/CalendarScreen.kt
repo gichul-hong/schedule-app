@@ -25,6 +25,7 @@ import com.scheduleapp.features.calendar.viewmodel.CalendarState
 import com.scheduleapp.features.calendar.viewmodel.CalendarViewMode
 import com.scheduleapp.features.calendar.viewmodel.CalendarViewModel
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.isoDayNumber
 
 @Composable
 fun CalendarScreen(

@@ -1,6 +1,7 @@
 package com.scheduleapp.test
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.isoDayNumber
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

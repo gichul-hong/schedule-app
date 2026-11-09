@@ -115,7 +115,7 @@ class DatabaseBackupEngine(
             if (s.todos.isNotEmpty()) {
                 sb.append("\n")
                 s.todos.forEachIndexed { i, t ->
-                    sb.append("    {\"id\": ${t.id}, \"title\": ${t.title.toJsonString()}, \"dueDate\": ${t.dueDate}, \"priority\": ${t.priority.toJsonString()}, \"isCompleted\": ${t.isCompleted}, \"completedAt\": ${t.completedAt}}")
+                    sb.append("    {\"id\": ${t.id}, \"title\": ${t.title.toJsonString()}, \"dueDate\": ${t.dueDate}, \"priority\": ${t.priority}, \"isCompleted\": ${t.isCompleted}, \"completedAt\": ${t.completedAt}}")
                     if (i < s.todos.size - 1) sb.append(",")
                     sb.append("\n")
                 }
@@ -127,7 +127,7 @@ class DatabaseBackupEngine(
             if (s.routines.isNotEmpty()) {
                 sb.append("\n")
                 s.routines.forEachIndexed { i, r ->
-                    sb.append("    {\"id\": ${r.id}, \"title\": ${r.title.toJsonString()}, \"repeatDaysMask\": ${r.repeatDaysMask}, \"createdAt\": ${r.createdAt}, \"isActive\": ${r.isActive}}")
+                    sb.append("    {\"id\": ${r.id}, \"title\": ${r.title.toJsonString()}, \"repeatDaysMask\": ${r.repeatDaysMask}, \"targetTime\": ${r.targetTime.toJsonValue()}, \"category\": ${r.category.toJsonString()}, \"createdAt\": ${r.createdAt}}")
                     if (i < s.routines.size - 1) sb.append(",")
                     sb.append("\n")
                 }
@@ -163,7 +163,7 @@ class DatabaseBackupEngine(
             if (s.expenses.isNotEmpty()) {
                 sb.append("\n")
                 s.expenses.forEachIndexed { i, e ->
-                    sb.append("    {\"id\": ${e.id}, \"vehicleId\": ${e.vehicleId}, \"date\": ${e.date}, \"type\": ${e.type.toJsonString()}, \"amount\": ${e.amount}, \"odometer\": ${e.odometer}, \"memo\": ${e.memo.toJsonString()}}")
+                    sb.append("    {\"id\": ${e.id}, \"vehicleId\": ${e.vehicleId}, \"date\": ${e.date}, \"type\": ${e.type.toJsonString()}, \"amount\": ${e.amount}, \"odometer\": ${e.odometer}, \"memo\": ${e.memo.toJsonValue()}}")
                     if (i < s.expenses.size - 1) sb.append(",")
                     sb.append("\n")
                 }
@@ -224,8 +224,8 @@ class DatabaseBackupEngine(
                 TodoItemEntity(
                     id = (m["id"] as? Number)?.toLong() ?: 0L,
                     title = m["title"] as? String ?: "",
-                    dueDate = (m["dueDate"] as? Number)?.toLong() ?: 0L,
-                    priority = m["priority"] as? String ?: "MEDIUM",
+                    dueDate = (m["dueDate"] as? Number)?.toLong(),
+                    priority = (m["priority"] as? Number)?.toInt() ?: 2,
                     isCompleted = m["isCompleted"] as? Boolean ?: false,
                     completedAt = (m["completedAt"] as? Number)?.toLong()
                 )
@@ -236,8 +236,9 @@ class DatabaseBackupEngine(
                     id = (m["id"] as? Number)?.toLong() ?: 0L,
                     title = m["title"] as? String ?: "",
                     repeatDaysMask = (m["repeatDaysMask"] as? Number)?.toInt() ?: 0x7F,
-                    createdAt = (m["createdAt"] as? Number)?.toLong() ?: 0L,
-                    isActive = m["isActive"] as? Boolean ?: true
+                    targetTime = m["targetTime"] as? String,
+                    category = m["category"] as? String ?: "DAILY",
+                    createdAt = (m["createdAt"] as? Number)?.toLong() ?: 0L
                 )
             } ?: emptyList()
 

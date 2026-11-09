@@ -80,7 +80,7 @@ class DatabaseBackupEngineTest {
             id = 201L,
             title = "와이퍼 블레이드 구매",
             dueDate = 1731100000000L,
-            priority = "HIGH",
+            priority = 3,
             isCompleted = true,
             completedAt = 1731090000000L
         )
@@ -89,8 +89,9 @@ class DatabaseBackupEngineTest {
             id = 301L,
             title = "차량 주유 및 주행거리 기록",
             repeatDaysMask = 127,
-            createdAt = 1730000000000L,
-            isActive = true
+            targetTime = "09:00",
+            category = "DAILY",
+            createdAt = 1730000000000L
         )
 
         val routineLog = RoutineLogEntity(

@@ -48,6 +48,15 @@ kotlin {
             // Koin DI
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
+
+            // Lifecycle ViewModel
+            implementation(libs.androidx.lifecycle.viewmodel)
+            implementation(libs.androidx.lifecycle.runtime.compose)
+        }
+
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.kotlinx.coroutines.test)
         }
 
         androidMain.dependencies {

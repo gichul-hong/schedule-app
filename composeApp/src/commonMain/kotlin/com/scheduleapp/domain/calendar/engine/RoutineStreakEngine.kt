@@ -6,6 +6,7 @@ import com.scheduleapp.domain.calendar.model.RoutineLog
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.toLocalDateTime
 
 object RoutineStreakEngine {

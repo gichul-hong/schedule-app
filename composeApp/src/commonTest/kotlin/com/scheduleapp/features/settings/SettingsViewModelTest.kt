@@ -21,9 +21,12 @@ import com.scheduleapp.domain.carbook.model.FuelType
 import com.scheduleapp.domain.carbook.model.MaintenanceItem
 import com.scheduleapp.domain.carbook.model.Vehicle
 import com.scheduleapp.domain.carbook.repository.CarBookRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -32,6 +35,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
 
     private class FakeCarBookRepository : CarBookRepository {
@@ -175,10 +179,10 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun testPreferencesMutation_ThemeAndUnits() {
+    fun testPreferencesMutation_ThemeAndUnits() = runTest {
         val repo = FakeCarBookRepository()
         val backupEngine = DatabaseBackupEngine(FakeScheduleDao(), FakeCarBookDao())
-        val vm = SettingsViewModel(repo, backupEngine)
+        val vm = SettingsViewModel(repo, backupEngine, CoroutineScope(UnconfinedTestDispatcher(testScheduler)))
 
         // Theme Mode
         vm.setThemeMode(ThemeMode.DARK)
@@ -200,7 +204,7 @@ class SettingsViewModelTest {
     fun testDefaultVehicleSelection() = runTest {
         val repo = FakeCarBookRepository()
         val backupEngine = DatabaseBackupEngine(FakeScheduleDao(), FakeCarBookDao())
-        val vm = SettingsViewModel(repo, backupEngine)
+        val vm = SettingsViewModel(repo, backupEngine, CoroutineScope(UnconfinedTestDispatcher(testScheduler)))
 
         // Change default vehicle to Sorento (id 2)
         vm.setDefaultVehicle(2L)
@@ -214,7 +218,7 @@ class SettingsViewModelTest {
     fun testExportAndRestoreLifecycle() = runTest {
         val repo = FakeCarBookRepository()
         val backupEngine = DatabaseBackupEngine(FakeScheduleDao(), FakeCarBookDao())
-        val vm = SettingsViewModel(repo, backupEngine)
+        val vm = SettingsViewModel(repo, backupEngine, CoroutineScope(UnconfinedTestDispatcher(testScheduler)))
 
         // Export
         vm.exportBackup()

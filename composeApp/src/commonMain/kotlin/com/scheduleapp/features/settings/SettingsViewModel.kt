@@ -1,11 +1,13 @@
 package com.scheduleapp.features.settings
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.scheduleapp.core.platform.DatabaseBackupEngine
 import com.scheduleapp.core.theme.ThemeMode
 import com.scheduleapp.domain.carbook.model.Vehicle
 import com.scheduleapp.domain.carbook.repository.CarBookRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,7 +16,8 @@ import kotlinx.coroutines.launch
 
 class SettingsViewModel(
     private val carBookRepository: CarBookRepository,
-    private val backupEngine: DatabaseBackupEngine
+    private val backupEngine: DatabaseBackupEngine,
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsState())
@@ -25,7 +28,7 @@ class SettingsViewModel(
     }
 
     private fun loadVehicles() {
-        viewModelScope.launch {
+        scope.launch {
             carBookRepository.getAllVehicles().collect { vehicles ->
                 val defaultCar = vehicles.find { it.isDefault } ?: vehicles.firstOrNull()
                 _uiState.update { it.copy(vehicles = vehicles, defaultVehicle = defaultCar) }
@@ -46,7 +49,7 @@ class SettingsViewModel(
     }
 
     fun setDefaultVehicle(vehicleId: Long) {
-        viewModelScope.launch {
+        scope.launch {
             val currentVehicles = _uiState.value.vehicles
             currentVehicles.forEach { vehicle ->
                 val shouldBeDefault = vehicle.id == vehicleId
@@ -60,7 +63,7 @@ class SettingsViewModel(
     }
 
     fun exportBackup() {
-        viewModelScope.launch {
+        scope.launch {
             _uiState.update { it.copy(isExporting = true, statusMessage = null) }
             try {
                 val json = backupEngine.exportToJson()
@@ -86,7 +89,7 @@ class SettingsViewModel(
     }
 
     fun restoreBackup(json: String) {
-        viewModelScope.launch {
+        scope.launch {
             _uiState.update { it.copy(isRestoring = true, statusMessage = null) }
             val result = backupEngine.restoreFromJson(json)
             result.fold(
