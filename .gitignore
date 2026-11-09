@@ -43,3 +43,4 @@ DerivedData/
 ### Build outputs ###
 **/build/
 .kotlin/
+.agents/
