@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.scheduleapp.core.platform.ReceiptImageThumbnail
 import com.scheduleapp.core.util.DateTimeUtils
 import com.scheduleapp.domain.carbook.model.CarExpenseLog
 import com.scheduleapp.domain.carbook.model.FuelRecord
@@ -42,6 +43,8 @@ fun CarBookScreen(
 
     var showFuelSheet by remember { mutableStateOf(false) }
     var showExpenseSheet by remember { mutableStateOf(false) }
+    var editingExpense by remember { mutableStateOf<CarExpenseLog?>(null) }
+    var previewReceiptExpense by remember { mutableStateOf<CarExpenseLog?>(null) }
     var showVehicleProfileDialog by remember { mutableStateOf(false) }
     var isAddingNewVehicle by remember { mutableStateOf(false) }
     var showFabMenu by remember { mutableStateOf(false) }
@@ -75,6 +78,7 @@ fun CarBookScreen(
                         ExtendedFloatingActionButton(
                             onClick = {
                                 showFabMenu = false
+                                editingExpense = null
                                 showExpenseSheet = true
                             },
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -235,6 +239,13 @@ fun CarBookScreen(
                             items(state.expenseLogs, key = { it.id }) { expense ->
                                 ExpenseLogCard(
                                     expense = expense,
+                                    onEdit = {
+                                        editingExpense = expense
+                                        showExpenseSheet = true
+                                    },
+                                    onViewReceipt = {
+                                        previewReceiptExpense = expense
+                                    },
                                     onDelete = { viewModel.deleteExpense(expense) }
                                 )
                             }
@@ -260,11 +271,81 @@ fun CarBookScreen(
     }
 
     if (showExpenseSheet) {
+        val targetExpense = editingExpense
         AddExpenseBottomSheet(
             currentVehicleOdometer = state.selectedVehicle?.currentOdometer ?: 0.0,
-            onDismiss = { showExpenseSheet = false },
-            onConfirm = { type, amount, odometer, date, memo ->
-                viewModel.addExpense(type, amount, odometer, date, memo)
+            initialExpense = targetExpense,
+            onDismiss = {
+                showExpenseSheet = false
+                editingExpense = null
+            },
+            onConfirm = { type, amount, odometer, date, memo, receiptImageUri ->
+                if (targetExpense != null) {
+                    viewModel.updateExpense(
+                        targetExpense.copy(
+                            type = type,
+                            amount = amount,
+                            odometer = odometer ?: targetExpense.odometer,
+                            date = date,
+                            memo = memo,
+                            receiptImageUri = receiptImageUri
+                        )
+                    )
+                } else {
+                    viewModel.addExpense(type, amount, odometer, date, memo, receiptImageUri)
+                }
+            }
+        )
+    }
+
+    if (previewReceiptExpense != null && previewReceiptExpense?.receiptImageUri != null) {
+        val target = previewReceiptExpense!!
+        AlertDialog(
+            onDismissRequest = { previewReceiptExpense = null },
+            title = {
+                Text(
+                    text = "🧾 영수증 상세 (${DateTimeUtils.formatDate(DateTimeUtils.localDateFromMillis(target.date))})",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (!target.memo.isNullOrBlank()) {
+                        Text(
+                            text = target.memo,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                    Text(
+                        text = "금액: ${formatCurrency(target.amount)} · 주행거리: ${formatNumber(target.odometer)} km",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    ReceiptImageThumbnail(
+                        imageUri = target.receiptImageUri!!,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(340.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val toEdit = target
+                        previewReceiptExpense = null
+                        editingExpense = toEdit
+                        showExpenseSheet = true
+                    }
+                ) {
+                    Text("내역 수정")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { previewReceiptExpense = null }) {
+                    Text("닫기")
+                }
             }
         )
     }
@@ -401,6 +482,18 @@ private fun VehicleHeaderCard(
                 )
                 Text(
                     text = "타이어 규격: 앞 245/45R20 · 뒤 275/40R20 (금호 윈터크래프트 WP72)",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else if (vehicle.name.contains("카니발") || vehicle.model.contains("카니발")) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "엔진오일: 킥스파오1 0W30 · 오일필터: 보쉬 O0096",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "에어컨필터: 보쉬 S5520 / A2659 · 배터리: 델코 90",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -567,82 +660,125 @@ private fun FuelRecordCard(
 @Composable
 private fun ExpenseLogCard(
     expense: CarExpenseLog,
+    onEdit: () -> Unit,
+    onViewReceipt: () -> Unit,
     onDelete: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onEdit() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(14.dp)
         ) {
-            // Category Icon Badge
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)),
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = expense.type.icon, fontSize = 20.sp)
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Details
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                // Category Icon Badge
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)),
+                    contentAlignment = Alignment.Center
                 ) {
+                    Text(text = expense.type.icon, fontSize = 20.sp)
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                // Details
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = expense.type.displayName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = DateTimeUtils.formatDate(DateTimeUtils.localDateFromMillis(expense.date)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (expense.receiptImageUri != null) {
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = MaterialTheme.colorScheme.tertiaryContainer,
+                                modifier = Modifier.clickable { onViewReceipt() }
+                            ) {
+                                Text(
+                                    text = "🧾 영수증",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    if (!expense.memo.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = expense.memo,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    if (expense.odometer > 0) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "${formatNumber(expense.odometer)} km",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                // Amount, Edit, and Delete
+                Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = expense.type.displayName,
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = formatCurrency(expense.amount),
+                        style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold
                     )
-                    Text(
-                        text = DateTimeUtils.formatDate(DateTimeUtils.localDateFromMillis(expense.date)),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                if (!expense.memo.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = expense.memo,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                if (expense.odometer > 0) {
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "${formatNumber(expense.odometer)} km",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            text = "수정",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.clickable { onEdit() }
+                        )
+                        Text(
+                            text = "삭제",
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 12.sp,
+                            modifier = Modifier.clickable { onDelete() }
+                        )
+                    }
                 }
             }
 
-            // Amount and Delete
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = formatCurrency(expense.amount),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "삭제",
-                    color = MaterialTheme.colorScheme.error,
-                    fontSize = 12.sp,
-                    modifier = Modifier.clickable { onDelete() }
+            if (expense.receiptImageUri != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                ReceiptImageThumbnail(
+                    imageUri = expense.receiptImageUri,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(96.dp),
+                    onClick = { onViewReceipt() }
                 )
             }
         }

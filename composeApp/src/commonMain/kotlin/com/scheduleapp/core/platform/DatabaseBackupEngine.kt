@@ -163,7 +163,7 @@ class DatabaseBackupEngine(
             if (s.expenses.isNotEmpty()) {
                 sb.append("\n")
                 s.expenses.forEachIndexed { i, e ->
-                    sb.append("    {\"id\": ${e.id}, \"vehicleId\": ${e.vehicleId}, \"date\": ${e.date}, \"type\": ${e.type.toJsonString()}, \"amount\": ${e.amount}, \"odometer\": ${e.odometer}, \"memo\": ${e.memo.toJsonValue()}}")
+                    sb.append("    {\"id\": ${e.id}, \"vehicleId\": ${e.vehicleId}, \"date\": ${e.date}, \"type\": ${e.type.toJsonString()}, \"amount\": ${e.amount}, \"odometer\": ${e.odometer}, \"memo\": ${e.memo.toJsonValue()}, \"receiptImageUri\": ${e.receiptImageUri.toJsonValue()}}")
                     if (i < s.expenses.size - 1) sb.append(",")
                     sb.append("\n")
                 }
@@ -271,7 +271,8 @@ class DatabaseBackupEngine(
                     type = m["type"] as? String ?: "OTHER",
                     amount = (m["amount"] as? Number)?.toDouble() ?: 0.0,
                     odometer = (m["odometer"] as? Number)?.toDouble() ?: 0.0,
-                    memo = m["memo"] as? String ?: ""
+                    memo = m["memo"] as? String,
+                    receiptImageUri = m["receiptImageUri"] as? String
                 )
             } ?: emptyList()
 

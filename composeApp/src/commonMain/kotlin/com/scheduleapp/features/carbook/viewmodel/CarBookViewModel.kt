@@ -48,7 +48,7 @@ class CarBookViewModel(
                         name = "카니발",
                         model = "카니발",
                         fuelType = FuelType.DIESEL,
-                        initialOdometer = 110000.0,
+                        initialOdometer = 37000.0,
                         currentOdometer = 114000.0,
                         isDefault = true
                     )
@@ -60,7 +60,8 @@ class CarBookViewModel(
                         currentOdometer = 9500.0,
                         isDefault = false
                     )
-                    carBookRepository.insertVehicle(primaryVehicle)
+                    val carnivalId = carBookRepository.insertVehicle(primaryVehicle)
+                    seedCarnivalHistoryAndMaintenance(carnivalId, preserveOdometer = 114000.0)
                     val cocneyId = carBookRepository.insertVehicle(secondaryVehicle)
                     seedCocneyHistoryAndMaintenance(cocneyId)
                     migrationChecked = true
@@ -69,6 +70,28 @@ class CarBookViewModel(
 
                 if (!migrationChecked) {
                     migrationChecked = true
+                    var migratedAny = false
+
+                    val targetCarnival = vehicles.find {
+                        it.name.contains("카니발") || it.name.contains("1호차") || it.model.contains("카니발")
+                    }
+                    if (targetCarnival != null) {
+                        val existingCarnivalExpenses = carBookRepository.getExpensesForVehicle(targetCarnival.id).first()
+                        if (existingCarnivalExpenses.isEmpty()) {
+                            val finalOdo = maxOf(targetCarnival.currentOdometer, 114000.0)
+                            val updatedCarnival = targetCarnival.copy(
+                                name = "카니발",
+                                model = "카니발",
+                                fuelType = FuelType.DIESEL,
+                                initialOdometer = 37000.0,
+                                currentOdometer = finalOdo
+                            )
+                            carBookRepository.updateVehicle(updatedCarnival)
+                            seedCarnivalHistoryAndMaintenance(targetCarnival.id, preserveOdometer = finalOdo)
+                            migratedAny = true
+                        }
+                    }
+
                     val targetCocney = vehicles.find {
                         it.name.contains("코크니") || it.name.contains("2호차") || it.model.contains("ix3", ignoreCase = true)
                     }
@@ -84,8 +107,12 @@ class CarBookViewModel(
                             )
                             carBookRepository.updateVehicle(updatedCocney)
                             seedCocneyHistoryAndMaintenance(targetCocney.id)
-                            return@collect
+                            migratedAny = true
                         }
+                    }
+
+                    if (migratedAny) {
+                        return@collect
                     }
                 }
 
@@ -189,7 +216,8 @@ class CarBookViewModel(
         amount: Double,
         odometer: Double?,
         date: Long = DateTimeUtils.nowMillis(),
-        memo: String? = null
+        memo: String? = null,
+        receiptImageUri: String? = null
     ) {
         val vehicle = _state.value.selectedVehicle ?: return
         scope.launch {
@@ -201,11 +229,22 @@ class CarBookViewModel(
                     type = type,
                     amount = amount,
                     odometer = finalOdometer,
-                    memo = memo
+                    memo = memo,
+                    receiptImageUri = receiptImageUri
                 )
                 carBookRepository.insertExpense(expense)
             } catch (e: Exception) {
                 _state.update { it.copy(errorMessage = e.message ?: "지출 기록 추가 중 오류가 발생했습니다.") }
+            }
+        }
+    }
+
+    fun updateExpense(expense: CarExpenseLog) {
+        scope.launch {
+            try {
+                carBookRepository.updateExpense(expense)
+            } catch (e: Exception) {
+                _state.update { it.copy(errorMessage = e.message ?: "지출 내역 수정 중 오류가 발생했습니다.") }
             }
         }
     }
@@ -277,6 +316,203 @@ class CarBookViewModel(
 
     fun clearError() {
         _state.update { it.copy(errorMessage = null) }
+    }
+
+    private suspend fun seedCarnivalHistoryAndMaintenance(
+        vehicleId: Long,
+        preserveOdometer: Double = 114000.0
+    ) {
+        fun d(year: Int, month: Int, day: Int): Long =
+            DateTimeUtils.startOfDayMillis(LocalDate(year, month, day))
+
+        val carnivalLogs = listOf(
+            CarExpenseLog(
+                vehicleId = vehicleId,
+                date = d(2017, 8, 1),
+                type = ExpenseType.MAINTENANCE,
+                amount = 0.0,
+                odometer = 37000.0,
+                memo = "타이어 4짝 교환"
+            ),
+            CarExpenseLog(
+                vehicleId = vehicleId,
+                date = d(2018, 6, 3),
+                type = ExpenseType.MAINTENANCE,
+                amount = 0.0,
+                odometer = 37000.0,
+                memo = "엔진오일 구매 (킥스파오1 0W30, 지마켓, 단가 7,220원)"
+            ),
+            CarExpenseLog(
+                vehicleId = vehicleId,
+                date = d(2019, 1, 5),
+                type = ExpenseType.MAINTENANCE,
+                amount = 120000.0,
+                odometer = 37000.0,
+                memo = "배터리 교체 (델코 90, 삼성화재다이렉트 기사)"
+            ),
+            CarExpenseLog(
+                vehicleId = vehicleId,
+                date = d(2019, 3, 6),
+                type = ExpenseType.MAINTENANCE,
+                amount = 0.0,
+                odometer = 50000.0,
+                memo = "엔진오일 교체 (킥스파오1 0W30, 11번가, 개당 8,630원)"
+            ),
+            CarExpenseLog(
+                vehicleId = vehicleId,
+                date = d(2019, 11, 11),
+                type = ExpenseType.MAINTENANCE,
+                amount = 53550.0,
+                odometer = 59380.0,
+                memo = "엔진오일 교체 (킥스파오1 0W30, 11번가 개당 7,650원 × 7통)"
+            ),
+            CarExpenseLog(
+                vehicleId = vehicleId,
+                date = d(2020, 8, 25),
+                type = ExpenseType.MAINTENANCE,
+                amount = 0.0,
+                odometer = 59380.0,
+                memo = "에어컨필터 교체 (보쉬 S5520 / A2659)"
+            ),
+            CarExpenseLog(
+                vehicleId = vehicleId,
+                date = d(2020, 8, 26),
+                type = ExpenseType.MAINTENANCE,
+                amount = 0.0,
+                odometer = 67242.0,
+                memo = "엔진오일 교체 (킥스파오1 0W30)"
+            ),
+            CarExpenseLog(
+                vehicleId = vehicleId,
+                date = d(2021, 8, 17),
+                type = ExpenseType.MAINTENANCE,
+                amount = 0.0,
+                odometer = 77777.0,
+                memo = "엔진오일 교체"
+            ),
+            CarExpenseLog(
+                vehicleId = vehicleId,
+                date = d(2022, 4, 29),
+                type = ExpenseType.MAINTENANCE,
+                amount = 0.0,
+                odometer = 84512.0,
+                memo = "엔진오일 교체 (킥스파오1 0W30)"
+            ),
+            CarExpenseLog(
+                vehicleId = vehicleId,
+                date = d(2022, 5, 7),
+                type = ExpenseType.MAINTENANCE,
+                amount = 0.0,
+                odometer = 84556.0,
+                memo = "타이어 위치교환"
+            ),
+            CarExpenseLog(
+                vehicleId = vehicleId,
+                date = d(2023, 3, 21),
+                type = ExpenseType.MAINTENANCE,
+                amount = 0.0,
+                odometer = 90059.0,
+                memo = "엔진오일 교체"
+            ),
+            CarExpenseLog(
+                vehicleId = vehicleId,
+                date = d(2023, 9, 22),
+                type = ExpenseType.MAINTENANCE,
+                amount = 0.0,
+                odometer = 90059.0,
+                memo = "미션오일 + 파워오일 교체"
+            ),
+            CarExpenseLog(
+                vehicleId = vehicleId,
+                date = d(2024, 2, 23),
+                type = ExpenseType.MAINTENANCE,
+                amount = 0.0,
+                odometer = 96950.0,
+                memo = "엔진오일 교체"
+            ),
+            CarExpenseLog(
+                vehicleId = vehicleId,
+                date = d(2025, 3, 10),
+                type = ExpenseType.MAINTENANCE,
+                amount = 67900.0,
+                odometer = 101200.0,
+                memo = "엔진오일 교체 (킥스파오1 0W30)"
+            ),
+            CarExpenseLog(
+                vehicleId = vehicleId,
+                date = d(2026, 1, 9),
+                type = ExpenseType.MAINTENANCE,
+                amount = 0.0,
+                odometer = 104800.0,
+                memo = "타이어 교환"
+            ),
+            CarExpenseLog(
+                vehicleId = vehicleId,
+                date = d(2026, 5, 1),
+                type = ExpenseType.MAINTENANCE,
+                amount = 0.0,
+                odometer = 106591.0,
+                memo = "엔진오일 교체"
+            )
+        )
+
+        carnivalLogs.forEach { log ->
+            carBookRepository.insertExpense(log)
+        }
+
+        val currentVehicle = carBookRepository.getVehicleById(vehicleId)
+        if (currentVehicle != null && currentVehicle.currentOdometer < preserveOdometer) {
+            carBookRepository.updateVehicle(currentVehicle.copy(currentOdometer = preserveOdometer))
+        }
+
+        val existingMaint = carBookRepository.getMaintenanceItemsForVehicle(vehicleId).first()
+        if (existingMaint.isEmpty()) {
+            val items = listOf(
+                MaintenanceItem(
+                    vehicleId = vehicleId,
+                    partName = "엔진오일 및 오일필터 (킥스파오1 0W30 / 보쉬 O0096)",
+                    cycleKm = 10000.0,
+                    cycleMonths = 12,
+                    lastReplacedDate = d(2026, 5, 1),
+                    lastReplacedOdometer = 106591.0,
+                    nextDueDate = MaintenanceWearEngine.calculateNextDueDate(d(2026, 5, 1), 12)
+                ),
+                MaintenanceItem(
+                    vehicleId = vehicleId,
+                    partName = "타이어 교체",
+                    cycleKm = 50000.0,
+                    cycleMonths = 48,
+                    lastReplacedDate = d(2026, 1, 9),
+                    lastReplacedOdometer = 104800.0,
+                    nextDueDate = MaintenanceWearEngine.calculateNextDueDate(d(2026, 1, 9), 48)
+                ),
+                MaintenanceItem(
+                    vehicleId = vehicleId,
+                    partName = "에어컨필터 (보쉬 S5520 / A2659)",
+                    cycleKm = 15000.0,
+                    cycleMonths = 12,
+                    lastReplacedDate = d(2020, 8, 25),
+                    lastReplacedOdometer = 59380.0,
+                    nextDueDate = MaintenanceWearEngine.calculateNextDueDate(d(2020, 8, 25), 12)
+                ),
+                MaintenanceItem(
+                    vehicleId = vehicleId,
+                    partName = "배터리 (델코 90)",
+                    cycleKm = 60000.0,
+                    cycleMonths = 48,
+                    lastReplacedDate = d(2019, 1, 5),
+                    lastReplacedOdometer = 37000.0,
+                    nextDueDate = MaintenanceWearEngine.calculateNextDueDate(d(2019, 1, 5), 48)
+                )
+            )
+            items.forEach { item ->
+                if (syncMaintenanceUseCase != null) {
+                    syncMaintenanceUseCase.createMaintenanceItem(item)
+                } else {
+                    carBookRepository.insertMaintenanceItem(item)
+                }
+            }
+        }
     }
 
     private suspend fun seedCocneyHistoryAndMaintenance(vehicleId: Long) {

@@ -7,5 +7,6 @@ data class CarExpenseLog(
     val type: ExpenseType,
     val amount: Double,
     val odometer: Double,
-    val memo: String? = null
+    val memo: String? = null,
+    val receiptImageUri: String? = null
 )

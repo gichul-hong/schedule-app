@@ -89,16 +89,17 @@ class CarBookRepositoryImpl(
 
     override suspend fun insertExpense(expense: CarExpenseLog): Long {
         val vehicle = carBookDao.getVehicleById(expense.vehicleId)
-        if (vehicle != null && expense.odometer > 0.0) {
-            FuelEfficiencyEngine.validateOdometer(vehicle.currentOdometer, expense.odometer)
-            if (expense.odometer > vehicle.currentOdometer) {
-                carBookDao.updateVehicle(vehicle.copy(currentOdometer = expense.odometer))
-            }
+        if (vehicle != null && expense.odometer > vehicle.currentOdometer) {
+            carBookDao.updateVehicle(vehicle.copy(currentOdometer = expense.odometer))
         }
         return carBookDao.insertExpense(expense.toEntity())
     }
 
     override suspend fun updateExpense(expense: CarExpenseLog) {
+        val vehicle = carBookDao.getVehicleById(expense.vehicleId)
+        if (vehicle != null && expense.odometer > vehicle.currentOdometer) {
+            carBookDao.updateVehicle(vehicle.copy(currentOdometer = expense.odometer))
+        }
         carBookDao.updateExpense(expense.toEntity())
     }
 
@@ -233,7 +234,8 @@ class CarBookRepositoryImpl(
         type = ExpenseType.fromString(type),
         amount = amount,
         odometer = odometer,
-        memo = memo
+        memo = memo,
+        receiptImageUri = receiptImageUri
     )
 
     private fun CarExpenseLog.toEntity(): CarExpenseLogEntity = CarExpenseLogEntity(
@@ -243,7 +245,8 @@ class CarBookRepositoryImpl(
         type = type.name,
         amount = amount,
         odometer = odometer,
-        memo = memo
+        memo = memo,
+        receiptImageUri = receiptImageUri
     )
 
     // --- Maintenance Items ---

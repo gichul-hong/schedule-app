@@ -26,7 +26,7 @@ import com.scheduleapp.core.database.entity.VehicleEntity
         FuelDetailEntity::class,
         MaintenanceItemEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @ConstructedBy(AppDatabaseConstructor::class)
