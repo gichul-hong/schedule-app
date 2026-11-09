@@ -282,29 +282,88 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "💾 데이터 백업 및 복원 (Offline-First)",
+                        text = "☁️ GitHub 클라우드 백업 & 동기화",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "일정, 할 일, 루틴, 차량 등록, 주유 및 정비 내역을 JSON 스냅샷으로 안전하게 백업 및 복원합니다.",
+                        text = "GitHub API를 이용해 저장소(backup/schedule_db.json)와 실시간 백업 및 복원을 수행합니다.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = "${state.githubOwner}/${state.githubRepo} (브랜치: ${state.githubBranch})",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("동기화 저장소 및 경로") },
+                        supportingText = { Text("저장 경로: backup/schedule_db.json") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = state.githubPat,
+                        onValueChange = { newPat ->
+                            viewModel.updateGitHubConfig(newPat, state.githubOwner, state.githubRepo, state.githubBranch)
+                        },
+                        label = { Text("GitHub 개인 접근 토큰 (PAT)") },
+                        placeholder = { Text("ghp_...") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Button(
+                            onClick = { viewModel.pushToGitHub() },
+                            enabled = !state.isGitHubSyncing,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(if (state.isGitHubSyncing) "동기화 중..." else "⬆️ GitHub 백업 (Push)")
+                        }
+
+                        OutlinedButton(
+                            onClick = { viewModel.pullFromGitHub() },
+                            enabled = !state.isGitHubSyncing,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("⬇️ GitHub 복원 (Pull)")
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Text(
+                        text = "💾 로컬 오프라인 JSON 백업/복원",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Button(
+                        OutlinedButton(
                             onClick = { viewModel.exportBackup() },
                             enabled = !state.isExporting && !state.isRestoring,
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text(if (state.isExporting) "생성 중..." else "백업 생성 (JSON)")
+                            Text(if (state.isExporting) "생성 중..." else "JSON 내보내기")
                         }
 
                         OutlinedButton(
@@ -313,7 +372,7 @@ fun SettingsScreen(
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text("백업 복원")
+                            Text("JSON 불러오기")
                         }
                     }
                 }

@@ -2,6 +2,7 @@ package com.scheduleapp.features.settings
 
 import androidx.lifecycle.ViewModel
 import com.scheduleapp.core.platform.DatabaseBackupEngine
+import com.scheduleapp.core.platform.GitHubSyncEngine
 import com.scheduleapp.core.theme.ThemeMode
 import com.scheduleapp.domain.carbook.model.Vehicle
 import com.scheduleapp.domain.carbook.repository.CarBookRepository
@@ -17,6 +18,7 @@ import kotlinx.coroutines.launch
 class SettingsViewModel(
     private val carBookRepository: CarBookRepository,
     private val backupEngine: DatabaseBackupEngine,
+    private val gitHubSyncEngine: GitHubSyncEngine? = null,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 ) : ViewModel() {
 
@@ -118,5 +120,84 @@ class SettingsViewModel(
 
     fun clearStatusMessage() {
         _uiState.update { it.copy(statusMessage = null, exportedJson = null) }
+    }
+
+    fun updateGitHubConfig(pat: String, owner: String, repo: String, branch: String) {
+        _uiState.update {
+            it.copy(
+                githubPat = pat,
+                githubOwner = owner,
+                githubRepo = repo,
+                githubBranch = branch
+            )
+        }
+    }
+
+    fun pushToGitHub() {
+        val engine = gitHubSyncEngine ?: return
+        val current = _uiState.value
+        scope.launch {
+            _uiState.update { it.copy(isGitHubSyncing = true, statusMessage = null) }
+            val result = engine.pushBackup(
+                pat = current.githubPat.trim(),
+                owner = current.githubOwner.trim(),
+                repo = current.githubRepo.trim(),
+                branch = current.githubBranch.trim()
+            )
+            result.fold(
+                onSuccess = { count ->
+                    _uiState.update {
+                        it.copy(
+                            isGitHubSyncing = false,
+                            statusMessage = "GitHub 백업 완료! (총 ${count}개 데이터 항목이 backup/schedule_db.json에 저장되었습니다)",
+                            isStatusError = false
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(
+                            isGitHubSyncing = false,
+                            statusMessage = error.message ?: "GitHub 백업 실패",
+                            isStatusError = true
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    fun pullFromGitHub() {
+        val engine = gitHubSyncEngine ?: return
+        val current = _uiState.value
+        scope.launch {
+            _uiState.update { it.copy(isGitHubSyncing = true, statusMessage = null) }
+            val result = engine.pullBackup(
+                pat = current.githubPat.trim(),
+                owner = current.githubOwner.trim(),
+                repo = current.githubRepo.trim(),
+                branch = current.githubBranch.trim()
+            )
+            result.fold(
+                onSuccess = { count ->
+                    _uiState.update {
+                        it.copy(
+                            isGitHubSyncing = false,
+                            statusMessage = "GitHub에서 복원 완료! (총 ${count}개 데이터가 복원되었습니다)",
+                            isStatusError = false
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(
+                            isGitHubSyncing = false,
+                            statusMessage = error.message ?: "GitHub 복원 실패",
+                            isStatusError = true
+                        )
+                    }
+                }
+            )
+        }
     }
 }

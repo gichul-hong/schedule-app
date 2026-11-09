@@ -182,7 +182,7 @@ class SettingsViewModelTest {
     fun testPreferencesMutation_ThemeAndUnits() = runTest {
         val repo = FakeCarBookRepository()
         val backupEngine = DatabaseBackupEngine(FakeScheduleDao(), FakeCarBookDao())
-        val vm = SettingsViewModel(repo, backupEngine, CoroutineScope(UnconfinedTestDispatcher(testScheduler)))
+        val vm = SettingsViewModel(repo, backupEngine, gitHubSyncEngine = null, scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler)))
 
         // Theme Mode
         vm.setThemeMode(ThemeMode.DARK)
@@ -204,7 +204,7 @@ class SettingsViewModelTest {
     fun testDefaultVehicleSelection() = runTest {
         val repo = FakeCarBookRepository()
         val backupEngine = DatabaseBackupEngine(FakeScheduleDao(), FakeCarBookDao())
-        val vm = SettingsViewModel(repo, backupEngine, CoroutineScope(UnconfinedTestDispatcher(testScheduler)))
+        val vm = SettingsViewModel(repo, backupEngine, gitHubSyncEngine = null, scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler)))
 
         // Change default vehicle to Sorento (id 2)
         vm.setDefaultVehicle(2L)
@@ -218,7 +218,7 @@ class SettingsViewModelTest {
     fun testExportAndRestoreLifecycle() = runTest {
         val repo = FakeCarBookRepository()
         val backupEngine = DatabaseBackupEngine(FakeScheduleDao(), FakeCarBookDao())
-        val vm = SettingsViewModel(repo, backupEngine, CoroutineScope(UnconfinedTestDispatcher(testScheduler)))
+        val vm = SettingsViewModel(repo, backupEngine, gitHubSyncEngine = null, scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler)))
 
         // Export
         vm.exportBackup()

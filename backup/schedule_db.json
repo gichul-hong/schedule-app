@@ -1,0 +1,361 @@
+{
+  "version": 1,
+  "exportedAt": 1794230936579,
+  "events": [],
+  "todos": [],
+  "routines": [],
+  "routineLogs": [],
+  "vehicles": [
+    {
+      "id": 1,
+      "name": "카니발",
+      "model": "카니발 YP (67두 0617)",
+      "fuelType": "DIESEL",
+      "initialOdometer": 37000.0,
+      "currentOdometer": 114000.0,
+      "isDefault": true
+    },
+    {
+      "id": 2,
+      "name": "코크니",
+      "model": "BMW iX3 M Spt LCI",
+      "fuelType": "ELECTRIC",
+      "initialOdometer": 9500.0,
+      "currentOdometer": 52820.0,
+      "isDefault": false
+    }
+  ],
+  "expenses": [
+    {
+      "id": 1,
+      "vehicleId": 1,
+      "date": 1501513200000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 37000.0,
+      "memo": "타이어 4짝 교환",
+      "receiptImageUri": null
+    },
+    {
+      "id": 2,
+      "vehicleId": 1,
+      "date": 1527951600000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 37000.0,
+      "memo": "엔진오일 구매 (킥스파오1 0W30, 지마켓, 단가 7,220원)",
+      "receiptImageUri": null
+    },
+    {
+      "id": 3,
+      "vehicleId": 1,
+      "date": 1546614000000,
+      "type": "MAINTENANCE",
+      "amount": 120000.0,
+      "odometer": 37000.0,
+      "memo": "배터리 교체 (델코 90, 삼성화재다이렉트 기사)",
+      "receiptImageUri": null
+    },
+    {
+      "id": 4,
+      "vehicleId": 1,
+      "date": 1551798000000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 50000.0,
+      "memo": "엔진오일 교체 (킥스파오1 0W30, 11번가, 개당 8,630원)",
+      "receiptImageUri": null
+    },
+    {
+      "id": 5,
+      "vehicleId": 1,
+      "date": 1573398000000,
+      "type": "MAINTENANCE",
+      "amount": 53550.0,
+      "odometer": 59380.0,
+      "memo": "엔진오일 교체 (킥스파오1 0W30, 11번가 개당 7,650원 × 7통)",
+      "receiptImageUri": null
+    },
+    {
+      "id": 6,
+      "vehicleId": 1,
+      "date": 1598281200000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 59380.0,
+      "memo": "에어컨필터 교체 (보쉬 S5520 / A2659)",
+      "receiptImageUri": null
+    },
+    {
+      "id": 7,
+      "vehicleId": 1,
+      "date": 1598367600000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 67242.0,
+      "memo": "엔진오일 교체 (킥스파오1 0W30)",
+      "receiptImageUri": null
+    },
+    {
+      "id": 8,
+      "vehicleId": 1,
+      "date": 1629126000000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 77777.0,
+      "memo": "엔진오일 교체",
+      "receiptImageUri": null
+    },
+    {
+      "id": 9,
+      "vehicleId": 1,
+      "date": 1651158000000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 84512.0,
+      "memo": "엔진오일 교체 (킥스파오1 0W30)",
+      "receiptImageUri": null
+    },
+    {
+      "id": 10,
+      "vehicleId": 1,
+      "date": 1651849200000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 84556.0,
+      "memo": "타이어 위치교환",
+      "receiptImageUri": null
+    },
+    {
+      "id": 11,
+      "vehicleId": 1,
+      "date": 1679324400000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 90059.0,
+      "memo": "엔진오일 교체",
+      "receiptImageUri": null
+    },
+    {
+      "id": 12,
+      "vehicleId": 1,
+      "date": 1695298800000,
+      "type": "MAINTENANCE",
+      "amount": 985000.0,
+      "odometer": 92716.0,
+      "memo": "[용인모터스] T/B·인젝터 청소 | 겉벨트 set(31.9만), 흡기/인젝터 크리닝 set(23만), 냉각수 크리닝(7.7만), 부스트압력센서(3.3만), 인젝터 리턴호스(4.4만), #1번 코일(5.5만), 파워오일 울트라(5.5만), 미션오일(15만)",
+      "receiptImageUri": "/data/user/0/com.scheduleapp/files/receipts/receipt_20230922.jpg"
+    },
+    {
+      "id": 13,
+      "vehicleId": 1,
+      "date": 1708614000000,
+      "type": "MAINTENANCE",
+      "amount": 860000.0,
+      "odometer": 96967.0,
+      "memo": "[용인모터스] 엔진오일 공임/필터(4.5만, 오일지참), 앞 로우암 ASSY 좌·우(27.6만), 앞 스테빌 링크 좌·우(5.5만), 엔진/미션 미미 4개 set(26.4만), 리어 트레일링 암 좌·우(22만)",
+      "receiptImageUri": "/data/user/0/com.scheduleapp/files/receipts/receipt_20240223.png"
+    },
+    {
+      "id": 14,
+      "vehicleId": 1,
+      "date": 1741532400000,
+      "type": "MAINTENANCE",
+      "amount": 67900.0,
+      "odometer": 101200.0,
+      "memo": "엔진오일 교체 (킥스파오1 0W30)",
+      "receiptImageUri": null
+    },
+    {
+      "id": 15,
+      "vehicleId": 1,
+      "date": 1767884400000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 104800.0,
+      "memo": "타이어 교환",
+      "receiptImageUri": null
+    },
+    {
+      "id": 16,
+      "vehicleId": 1,
+      "date": 1777561200000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 106591.0,
+      "memo": "엔진오일 교체",
+      "receiptImageUri": null
+    },
+    {
+      "id": 17,
+      "vehicleId": 2,
+      "date": 1668610800000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 9500.0,
+      "memo": "윈터 타이어로 교체 (시즌 교체)",
+      "receiptImageUri": null
+    },
+    {
+      "id": 18,
+      "vehicleId": 2,
+      "date": 1672012800000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 9500.0,
+      "memo": "좌측 뒤 타이어 펑크 수리 (버섯패치)",
+      "receiptImageUri": null
+    },
+    {
+      "id": 19,
+      "vehicleId": 2,
+      "date": 1679756400000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 13300.0,
+      "memo": "썸머 타이어로 교체 (시즌 교체)",
+      "receiptImageUri": null
+    },
+    {
+      "id": 20,
+      "vehicleId": 2,
+      "date": 1710000000000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 23133.0,
+      "memo": "썸머 타이어로 교체 (시즌 교체)",
+      "receiptImageUri": null
+    },
+    {
+      "id": 21,
+      "vehicleId": 2,
+      "date": 1741359600000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 31444.0,
+      "memo": "썸머 타이어로 교체 + 휠 얼라인먼트",
+      "receiptImageUri": null
+    },
+    {
+      "id": 22,
+      "vehicleId": 2,
+      "date": 1762959600000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 39700.0,
+      "memo": "윈터 타이어로 교체 (Winter 시즌 교체)",
+      "receiptImageUri": null
+    },
+    {
+      "id": 23,
+      "vehicleId": 2,
+      "date": 1773490800000,
+      "type": "MAINTENANCE",
+      "amount": 0.0,
+      "odometer": 43292.0,
+      "memo": "썸머 타이어로 교체 (Summer 시즌 교체)",
+      "receiptImageUri": null
+    },
+    {
+      "id": 24,
+      "vehicleId": 2,
+      "date": 1794150000000,
+      "type": "MAINTENANCE",
+      "amount": 690000.0,
+      "odometer": 52820.0,
+      "memo": "윈터 타이어 4짝 교체 (금호 윈터크래프트 WP72 | 앞 245/45R20 / 뒤 275/40R20) | 차대번호: WBY41DU06NS276760",
+      "receiptImageUri": null
+    }
+  ],
+  "fuelDetails": [],
+  "maintenanceItems": [
+    {
+      "id": 1,
+      "vehicleId": 1,
+      "partName": "엔진오일 및 오일필터 (킥스파오1 0W30 / 보쉬 O0096)",
+      "cycleKm": 10000.0,
+      "cycleMonths": 12,
+      "lastReplacedDate": 1777561200000,
+      "lastReplacedOdometer": 106591.0,
+      "nextDueDate": 1809097200000,
+      "scheduledEventId": null
+    },
+    {
+      "id": 2,
+      "vehicleId": 1,
+      "partName": "타이어 교체",
+      "cycleKm": 50000.0,
+      "cycleMonths": 48,
+      "lastReplacedDate": 1767884400000,
+      "lastReplacedOdometer": 104800.0,
+      "nextDueDate": 1894114800000,
+      "scheduledEventId": null
+    },
+    {
+      "id": 3,
+      "vehicleId": 1,
+      "partName": "에어컨필터 (보쉬 S5520 / A2659)",
+      "cycleKm": 15000.0,
+      "cycleMonths": 12,
+      "lastReplacedDate": 1598281200000,
+      "lastReplacedOdometer": 59380.0,
+      "nextDueDate": 1629817200000,
+      "scheduledEventId": null
+    },
+    {
+      "id": 4,
+      "vehicleId": 1,
+      "partName": "배터리 (델코 90)",
+      "cycleKm": 60000.0,
+      "cycleMonths": 48,
+      "lastReplacedDate": 1546614000000,
+      "lastReplacedOdometer": 37000.0,
+      "nextDueDate": 1672844400000,
+      "scheduledEventId": null
+    },
+    {
+      "id": 5,
+      "vehicleId": 1,
+      "partName": "미션오일 및 파워오일 (울트라)",
+      "cycleKm": 60000.0,
+      "cycleMonths": 48,
+      "lastReplacedDate": 1695298800000,
+      "lastReplacedOdometer": 92716.0,
+      "nextDueDate": 1821529200000,
+      "scheduledEventId": null
+    },
+    {
+      "id": 6,
+      "vehicleId": 1,
+      "partName": "겉벨트 세트 및 냉각수",
+      "cycleKm": 80000.0,
+      "cycleMonths": 60,
+      "lastReplacedDate": 1695298800000,
+      "lastReplacedOdometer": 92716.0,
+      "nextDueDate": 1853065200000,
+      "scheduledEventId": null
+    },
+    {
+      "id": 7,
+      "vehicleId": 2,
+      "partName": "시즌 타이어 교체 (윈터→썸머 | 앞245/45R20 뒤275/40R20)",
+      "cycleKm": 8000.0,
+      "cycleMonths": 4,
+      "lastReplacedDate": 1794150000000,
+      "lastReplacedOdometer": 52820.0,
+      "nextDueDate": 1804604400000,
+      "scheduledEventId": null
+    },
+    {
+      "id": 8,
+      "vehicleId": 2,
+      "partName": "휠 얼라인먼트 점검",
+      "cycleKm": 25000.0,
+      "cycleMonths": 24,
+      "lastReplacedDate": 1741359600000,
+      "lastReplacedOdometer": 31444.0,
+      "nextDueDate": 1804431600000,
+      "scheduledEventId": null
+    }
+  ]
+}

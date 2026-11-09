@@ -24,6 +24,11 @@ data class SettingsState(
     val exportedJson: String? = null,
     val statusMessage: String? = null,
     val isStatusError: Boolean = false,
+    val githubPat: String = "",
+    val githubOwner: String = "gichul-hong",
+    val githubRepo: String = "schedule-app",
+    val githubBranch: String = "main",
+    val isGitHubSyncing: Boolean = false,
     val appVersion: String = "1.0.0-MVP",
     val buildNumber: String = "2026.11.08"
 )
