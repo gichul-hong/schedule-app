@@ -488,12 +488,12 @@ private fun VehicleHeaderCard(
             } else if (vehicle.name.contains("카니발") || vehicle.model.contains("카니발")) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "엔진오일: 킥스파오1 0W30 · 오일필터: 보쉬 O0096",
+                    text = "차량번호: 67두 0617 (YP 올뉴카니발) · 단골정비: 용인모터스",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "에어컨필터: 보쉬 S5520 / A2659 · 배터리: 델코 90",
+                    text = "엔진오일: 킥스파오1 0W30 · 오일필터: 보쉬 O0096 · 에어컨필터: 보쉬 S5520/A2659",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

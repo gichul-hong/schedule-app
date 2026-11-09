@@ -81,7 +81,7 @@ class CarBookViewModel(
                             val finalOdo = maxOf(targetCarnival.currentOdometer, 114000.0)
                             val updatedCarnival = targetCarnival.copy(
                                 name = "카니발",
-                                model = "카니발",
+                                model = "카니발 YP (67두 0617)",
                                 fuelType = FuelType.DIESEL,
                                 initialOdometer = 37000.0,
                                 currentOdometer = finalOdo
@@ -89,6 +89,15 @@ class CarBookViewModel(
                             carBookRepository.updateVehicle(updatedCarnival)
                             seedCarnivalHistoryAndMaintenance(targetCarnival.id, preserveOdometer = finalOdo)
                             migratedAny = true
+                        } else {
+                            if (!targetCarnival.model.contains("67두")) {
+                                carBookRepository.updateVehicle(
+                                    targetCarnival.copy(model = "카니발 YP (67두 0617)")
+                                )
+                            }
+                            if (upgradeCarnivalReceiptLogs(targetCarnival.id, existingCarnivalExpenses)) {
+                                migratedAny = true
+                            }
                         }
                     }
 
@@ -418,17 +427,19 @@ class CarBookViewModel(
                 vehicleId = vehicleId,
                 date = d(2023, 9, 22),
                 type = ExpenseType.MAINTENANCE,
-                amount = 0.0,
-                odometer = 90059.0,
-                memo = "미션오일 + 파워오일 교체"
+                amount = 985000.0,
+                odometer = 92716.0,
+                memo = "[용인모터스] T/B·인젝터 청소 | 겉벨트 set(31.9만), 흡기/인젝터 크리닝 set(23만), 냉각수 크리닝(7.7만), 부스트압력센서(3.3만), 인젝터 리턴호스(4.4만), #1번 코일(5.5만), 파워오일 울트라(5.5만), 미션오일(15만)",
+                receiptImageUri = RECEIPT_20230922_PATH
             ),
             CarExpenseLog(
                 vehicleId = vehicleId,
                 date = d(2024, 2, 23),
                 type = ExpenseType.MAINTENANCE,
-                amount = 0.0,
-                odometer = 96950.0,
-                memo = "엔진오일 교체"
+                amount = 860000.0,
+                odometer = 96967.0,
+                memo = "[용인모터스] 엔진오일 공임/필터(4.5만, 오일지참), 앞 로우암 ASSY 좌·우(27.6만), 앞 스테빌 링크 좌·우(5.5만), 엔진/미션 미미 4개 set(26.4만), 리어 트레일링 암 좌·우(22만)",
+                receiptImageUri = RECEIPT_20240223_PATH
             ),
             CarExpenseLog(
                 vehicleId = vehicleId,
@@ -503,6 +514,24 @@ class CarBookViewModel(
                     lastReplacedDate = d(2019, 1, 5),
                     lastReplacedOdometer = 37000.0,
                     nextDueDate = MaintenanceWearEngine.calculateNextDueDate(d(2019, 1, 5), 48)
+                ),
+                MaintenanceItem(
+                    vehicleId = vehicleId,
+                    partName = "미션오일 및 파워오일 (울트라)",
+                    cycleKm = 60000.0,
+                    cycleMonths = 48,
+                    lastReplacedDate = d(2023, 9, 22),
+                    lastReplacedOdometer = 92716.0,
+                    nextDueDate = MaintenanceWearEngine.calculateNextDueDate(d(2023, 9, 22), 48)
+                ),
+                MaintenanceItem(
+                    vehicleId = vehicleId,
+                    partName = "겉벨트 세트 및 냉각수",
+                    cycleKm = 80000.0,
+                    cycleMonths = 60,
+                    lastReplacedDate = d(2023, 9, 22),
+                    lastReplacedOdometer = 92716.0,
+                    nextDueDate = MaintenanceWearEngine.calculateNextDueDate(d(2023, 9, 22), 60)
                 )
             )
             items.forEach { item ->
@@ -513,6 +542,78 @@ class CarBookViewModel(
                 }
             }
         }
+    }
+
+    private suspend fun upgradeCarnivalReceiptLogs(
+        vehicleId: Long,
+        existingLogs: List<CarExpenseLog>
+    ): Boolean {
+        fun d(year: Int, month: Int, day: Int): Long =
+            DateTimeUtils.startOfDayMillis(LocalDate(year, month, day))
+
+        var updated = false
+        val date20230922 = d(2023, 9, 22)
+        val date20240223 = d(2024, 2, 23)
+
+        val log2023 = existingLogs.find { it.date == date20230922 }
+        if (log2023 != null && (log2023.amount < 985000.0 || log2023.receiptImageUri == null)) {
+            carBookRepository.updateExpense(
+                log2023.copy(
+                    amount = 985000.0,
+                    odometer = 92716.0,
+                    memo = "[용인모터스] T/B·인젝터 청소 | 겉벨트 set(31.9만), 흡기/인젝터 크리닝 set(23만), 냉각수 크리닝(7.7만), 부스트압력센서(3.3만), 인젝터 리턴호스(4.4만), #1번 코일(5.5만), 파워오일 울트라(5.5만), 미션오일(15만)",
+                    receiptImageUri = RECEIPT_20230922_PATH
+                )
+            )
+            updated = true
+        }
+
+        val log2024 = existingLogs.find { it.date == date20240223 }
+        if (log2024 != null && (log2024.amount < 860000.0 || log2024.receiptImageUri == null)) {
+            carBookRepository.updateExpense(
+                log2024.copy(
+                    amount = 860000.0,
+                    odometer = 96967.0,
+                    memo = "[용인모터스] 엔진오일 공임/필터(4.5만, 오일지참), 앞 로우암 ASSY 좌·우(27.6만), 앞 스테빌 링크 좌·우(5.5만), 엔진/미션 미미 4개 set(26.4만), 리어 트레일링 암 좌·우(22만)",
+                    receiptImageUri = RECEIPT_20240223_PATH
+                )
+            )
+            updated = true
+        }
+
+        val existingMaint = carBookRepository.getMaintenanceItemsForVehicle(vehicleId).first()
+        if (existingMaint.none { it.partName.contains("미션오일") }) {
+            val extraItems = listOf(
+                MaintenanceItem(
+                    vehicleId = vehicleId,
+                    partName = "미션오일 및 파워오일 (울트라)",
+                    cycleKm = 60000.0,
+                    cycleMonths = 48,
+                    lastReplacedDate = date20230922,
+                    lastReplacedOdometer = 92716.0,
+                    nextDueDate = MaintenanceWearEngine.calculateNextDueDate(date20230922, 48)
+                ),
+                MaintenanceItem(
+                    vehicleId = vehicleId,
+                    partName = "겉벨트 세트 및 냉각수",
+                    cycleKm = 80000.0,
+                    cycleMonths = 60,
+                    lastReplacedDate = date20230922,
+                    lastReplacedOdometer = 92716.0,
+                    nextDueDate = MaintenanceWearEngine.calculateNextDueDate(date20230922, 60)
+                )
+            )
+            extraItems.forEach { item ->
+                if (syncMaintenanceUseCase != null) {
+                    syncMaintenanceUseCase.createMaintenanceItem(item)
+                } else {
+                    carBookRepository.insertMaintenanceItem(item)
+                }
+            }
+            updated = true
+        }
+
+        return updated
     }
 
     private suspend fun seedCocneyHistoryAndMaintenance(vehicleId: Long) {
@@ -626,5 +727,10 @@ class CarBookViewModel(
                 carBookRepository.insertMaintenanceItem(alignItem)
             }
         }
+    }
+
+    companion object {
+        const val RECEIPT_20230922_PATH = "/data/user/0/com.scheduleapp/files/receipts/receipt_20230922.jpg"
+        const val RECEIPT_20240223_PATH = "/data/user/0/com.scheduleapp/files/receipts/receipt_20240223.png"
     }
 }
