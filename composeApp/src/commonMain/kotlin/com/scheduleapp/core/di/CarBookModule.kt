@@ -10,5 +10,5 @@ val carBookModule = module {
         CarBookRepositoryImpl(carBookDao = get())
     }
 
-    factory { CarBookViewModel(carBookRepository = get()) }
+    factory { CarBookViewModel(carBookRepository = get(), syncMaintenanceUseCase = get()) }
 }

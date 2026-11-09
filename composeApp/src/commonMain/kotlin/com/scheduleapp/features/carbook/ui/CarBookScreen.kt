@@ -392,6 +392,20 @@ private fun VehicleHeaderCard(
                 )
             }
 
+            if (vehicle.name.contains("코크니") || vehicle.model.contains("iX3", ignoreCase = true)) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "차대번호: WBY41DU06NS276760",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "타이어 규격: 앞 245/45R20 · 뒤 275/40R20 (금호 윈터크래프트 WP72)",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
             Divider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             Spacer(modifier = Modifier.height(12.dp))
