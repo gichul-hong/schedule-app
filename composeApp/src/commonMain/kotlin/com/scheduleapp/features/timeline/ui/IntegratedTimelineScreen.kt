@@ -21,6 +21,7 @@ import com.scheduleapp.core.util.DateTimeUtils
 import com.scheduleapp.domain.calendar.model.Priority
 import com.scheduleapp.features.timeline.viewmodel.TimelineItem
 import com.scheduleapp.features.timeline.viewmodel.TimelineViewModel
+import kotlinx.datetime.isoDayNumber
 
 @Composable
 fun IntegratedTimelineScreen(
@@ -57,9 +58,19 @@ fun IntegratedTimelineScreen(
                         Text("◀", fontSize = 14.sp)
                     }
                     val isToday = state.selectedDate == DateTimeUtils.today()
+                    val dayOfWeekKorean = when (state.selectedDate.dayOfWeek.isoDayNumber) {
+                        7 -> "일"
+                        1 -> "월"
+                        2 -> "화"
+                        3 -> "수"
+                        4 -> "목"
+                        5 -> "금"
+                        6 -> "토"
+                        else -> ""
+                    }
                     Text(
-                        text = if (isToday) "오늘 (${state.selectedDate.monthNumber}/${state.selectedDate.dayOfMonth})"
-                        else "${state.selectedDate.monthNumber}월 ${state.selectedDate.dayOfMonth}일",
+                        text = if (isToday) "오늘 (${state.selectedDate.monthNumber}/${state.selectedDate.dayOfMonth} $dayOfWeekKorean)"
+                        else "${state.selectedDate.monthNumber}월 ${state.selectedDate.dayOfMonth}일 ($dayOfWeekKorean)",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )

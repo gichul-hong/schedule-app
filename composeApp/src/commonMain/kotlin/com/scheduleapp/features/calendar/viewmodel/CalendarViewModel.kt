@@ -26,8 +26,15 @@ class CalendarViewModel(
     }
 
     fun selectDate(date: LocalDate) {
-        _state.update { it.copy(selectedDate = date) }
-        refreshSelectedDayEvents()
+        val current = _state.value.currentMonth
+        if (date.year != current.year || date.monthNumber != current.monthNumber) {
+            val target = LocalDate(date.year, date.monthNumber, 1)
+            _state.update { it.copy(currentMonth = target, selectedDate = date) }
+            loadEventsForMonth(target)
+        } else {
+            _state.update { it.copy(selectedDate = date) }
+            refreshSelectedDayEvents()
+        }
     }
 
     fun setViewMode(mode: CalendarViewMode) {
@@ -110,8 +117,10 @@ class CalendarViewModel(
 
     private fun loadEventsForMonth(monthDate: LocalDate) {
         scope.launch {
-            val start = DateTimeUtils.startOfDayMillis(DateTimeUtils.startOfMonth(monthDate.year, monthDate.monthNumber))
-            val end = DateTimeUtils.endOfDayMillis(DateTimeUtils.endOfMonth(monthDate.year, monthDate.monthNumber))
+            val startMonth = DateTimeUtils.startOfMonth(monthDate.year, monthDate.monthNumber)
+            val endMonth = DateTimeUtils.endOfMonth(monthDate.year, monthDate.monthNumber)
+            val start = DateTimeUtils.startOfDayMillis(LocalDate.fromEpochDays(startMonth.toEpochDays() - 7))
+            val end = DateTimeUtils.endOfDayMillis(LocalDate.fromEpochDays(endMonth.toEpochDays() + 7))
             repository.getEventsInRange(start, end).collectLatest { events ->
                 _state.update { it.copy(rangeEvents = events) }
                 refreshSelectedDayEvents()

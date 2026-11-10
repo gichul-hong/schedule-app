@@ -13,7 +13,7 @@ interface ScheduleDao {
     @Query("SELECT * FROM schedule_events ORDER BY startTime ASC")
     fun getAllEvents(): Flow<List<ScheduleEventEntity>>
 
-    @Query("SELECT * FROM schedule_events WHERE startTime >= :start AND endTime <= :end ORDER BY startTime ASC")
+    @Query("SELECT * FROM schedule_events WHERE startTime <= :end AND endTime >= :start ORDER BY startTime ASC")
     fun getEventsInRange(start: Long, end: Long): Flow<List<ScheduleEventEntity>>
 
     @Query("SELECT * FROM schedule_events WHERE id = :id")

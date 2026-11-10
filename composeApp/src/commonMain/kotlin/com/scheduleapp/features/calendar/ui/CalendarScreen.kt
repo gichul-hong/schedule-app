@@ -99,6 +99,17 @@ fun CalendarScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            val dayOfWeekKorean = when (state.selectedDate.dayOfWeek.isoDayNumber) {
+                7 -> "일"
+                1 -> "월"
+                2 -> "화"
+                3 -> "수"
+                4 -> "목"
+                5 -> "금"
+                6 -> "토"
+                else -> ""
+            }
+
             // Selected Day Events Section
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -106,7 +117,7 @@ fun CalendarScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "${DateTimeUtils.formatDate(state.selectedDate)} 일정 (${state.selectedDayEvents.size})",
+                    text = "${DateTimeUtils.formatDate(state.selectedDate)} ($dayOfWeekKorean) 일정 (${state.selectedDayEvents.size})",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -256,9 +267,11 @@ private fun MonthlyCalendarGrid(
     events: List<ScheduleEvent>,
     onDateSelected: (LocalDate) -> Unit
 ) {
-    val weekdayHeaders = listOf("월", "화", "수", "목", "금", "토", "일")
+    // Sunday first: 일, 월, 화, 수, 목, 금, 토
+    val weekdayHeaders = listOf("일", "월", "화", "수", "목", "금", "토")
     val firstDayOfMonth = LocalDate(currentMonth.year, currentMonth.monthNumber, 1)
-    val startDayOfWeek = firstDayOfMonth.dayOfWeek.isoDayNumber // 1=Mon .. 7=Sun
+    // Sunday-first offset: Sunday (7) -> 0, Monday (1) -> 1, ..., Saturday (6) -> 6
+    val startDayOffset = firstDayOfMonth.dayOfWeek.isoDayNumber % 7
     val totalDays = DateTimeUtils.endOfMonth(currentMonth.year, currentMonth.monthNumber).dayOfMonth
 
     Card(
@@ -270,14 +283,18 @@ private fun MonthlyCalendarGrid(
             // Weekday labels
             Row(modifier = Modifier.fillMaxWidth()) {
                 weekdayHeaders.forEachIndexed { idx, label ->
-                    val isWeekend = idx >= 5
+                    val textColor = when (idx) {
+                        0 -> Color(0xFFE53935) // Sunday: Red
+                        6 -> Color(0xFF1E88E5) // Saturday: Blue
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                     Text(
                         text = label,
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isWeekend) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = textColor
                     )
                 }
             }
@@ -285,12 +302,12 @@ private fun MonthlyCalendarGrid(
             Spacer(modifier = Modifier.height(6.dp))
 
             // Calendar day cells
-            val totalCells = ((startDayOfWeek - 1) + totalDays + 6) / 7 * 7
+            val totalCells = (startDayOffset + totalDays + 6) / 7 * 7
             for (row in 0 until totalCells / 7) {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     for (col in 0 until 7) {
                         val cellIndex = row * 7 + col
-                        val dayNumber = cellIndex - (startDayOfWeek - 1) + 1
+                        val dayNumber = cellIndex - startDayOffset + 1
 
                         if (dayNumber in 1..totalDays) {
                             val thisDate = LocalDate(currentMonth.year, currentMonth.monthNumber, dayNumber)
@@ -327,7 +344,8 @@ private fun MonthlyCalendarGrid(
                                         color = when {
                                             isSelected -> MaterialTheme.colorScheme.onPrimary
                                             isToday -> MaterialTheme.colorScheme.onPrimaryContainer
-                                            col >= 5 -> MaterialTheme.colorScheme.error
+                                            col == 0 -> Color(0xFFE53935) // Sunday: Red
+                                            col == 6 -> Color(0xFF1E88E5) // Saturday: Blue
                                             else -> MaterialTheme.colorScheme.onSurface
                                         }
                                     )
@@ -362,11 +380,12 @@ private fun WeeklyCalendarStrip(
     events: List<ScheduleEvent>,
     onDateSelected: (LocalDate) -> Unit
 ) {
-    // Current week starting from Monday
-    val dayOfWeek = selectedDate.dayOfWeek.isoDayNumber
-    val mondayEpoch = selectedDate.toEpochDays() - (dayOfWeek - 1)
-    val weekDates = (0 until 7).map { LocalDate.fromEpochDays(mondayEpoch + it) }
-    val weekdayLabels = listOf("월", "화", "수", "목", "금", "토", "일")
+    // Current week starting from Sunday: 0=Sun .. 6=Sat
+    val dayOfWeek = selectedDate.dayOfWeek.isoDayNumber // 1=Mon .. 7=Sun
+    val sundayOffset = dayOfWeek % 7 // 7%7 = 0 for Sun, 1%7 = 1 for Mon, ..., 6%7 = 6 for Sat
+    val sundayEpoch = selectedDate.toEpochDays() - sundayOffset
+    val weekDates = (0 until 7).map { LocalDate.fromEpochDays(sundayEpoch + it) }
+    val weekdayLabels = listOf("일", "월", "화", "수", "목", "금", "토")
 
     Row(
         modifier = Modifier
@@ -393,14 +412,24 @@ private fun WeeklyCalendarStrip(
                 Text(
                     text = weekdayLabels[index],
                     fontSize = 11.sp,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = when {
+                        isSelected -> MaterialTheme.colorScheme.onPrimary
+                        index == 0 -> Color(0xFFE53935) // Sunday: Red
+                        index == 6 -> Color(0xFF1E88E5) // Saturday: Blue
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "${date.dayOfMonth}",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                    color = when {
+                        isSelected -> MaterialTheme.colorScheme.onPrimary
+                        index == 0 -> Color(0xFFE53935) // Sunday: Red
+                        index == 6 -> Color(0xFF1E88E5) // Saturday: Blue
+                        else -> MaterialTheme.colorScheme.onSurface
+                    }
                 )
                 if (hasEvents) {
                     Box(
@@ -420,6 +449,16 @@ private fun WeeklyCalendarStrip(
 
 @Composable
 private fun DailyHeaderCard(selectedDate: LocalDate) {
+    val dayOfWeekKorean = when (selectedDate.dayOfWeek.isoDayNumber) {
+        7 -> "일요일"
+        1 -> "월요일"
+        2 -> "화요일"
+        3 -> "수요일"
+        4 -> "목요일"
+        5 -> "금요일"
+        6 -> "토요일"
+        else -> ""
+    }
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -427,7 +466,7 @@ private fun DailyHeaderCard(selectedDate: LocalDate) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "${selectedDate.year}년 ${selectedDate.monthNumber}월 ${selectedDate.dayOfMonth}일",
+                text = "${selectedDate.year}년 ${selectedDate.monthNumber}월 ${selectedDate.dayOfMonth}일 ($dayOfWeekKorean)",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
