@@ -26,6 +26,21 @@ actual class PlatformHttpEngine actual constructor() {
             HttpResponseData(code, body)
         }
 
+    actual suspend fun getBytes(url: String, headers: Map<String, String>): HttpByteResponseData =
+        withContext(Dispatchers.IO) {
+            val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 20000
+                readTimeout = 20000
+                headers.forEach { (k, v) -> setRequestProperty(k, v) }
+            }
+
+            val code = connection.responseCode
+            val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+            val bytes = stream?.use { it.readBytes() } ?: ByteArray(0)
+            HttpByteResponseData(code, bytes)
+        }
+
     actual suspend fun put(url: String, headers: Map<String, String>, body: String): HttpResponseData =
         withContext(Dispatchers.IO) {
             val connection = (URL(url).openConnection() as HttpURLConnection).apply {

@@ -16,5 +16,6 @@ val databaseModule = module {
     single { com.scheduleapp.core.platform.PlatformNotificationScheduler() }
     single { com.scheduleapp.core.platform.PlatformHttpEngine() }
     single { com.scheduleapp.core.platform.PlatformBase64() }
-    single { com.scheduleapp.core.platform.GitHubSyncEngine(get(), get(), get()) }
+    single { com.scheduleapp.core.platform.PlatformFileStorage() }
+    single { com.scheduleapp.core.platform.GitHubSyncEngine(get(), get(), get(), get(), get()) }
 }

@@ -145,11 +145,12 @@ class SettingsViewModel(
                 branch = current.githubBranch.trim()
             )
             result.fold(
-                onSuccess = { count ->
+                onSuccess = { syncRes ->
+                    val imgText = if (syncRes.imagesCount > 0) ", 영수증 사진 ${syncRes.imagesCount}장 업로드" else ""
                     _uiState.update {
                         it.copy(
                             isGitHubSyncing = false,
-                            statusMessage = "GitHub 백업 완료! (총 ${count}개 데이터 항목이 backup/schedule_db.json에 저장되었습니다)",
+                            statusMessage = "GitHub 백업 완료! (데이터 ${syncRes.recordsCount}건${imgText})",
                             isStatusError = false
                         )
                     }
@@ -179,11 +180,12 @@ class SettingsViewModel(
                 branch = current.githubBranch.trim()
             )
             result.fold(
-                onSuccess = { count ->
+                onSuccess = { syncRes ->
+                    val imgText = if (syncRes.imagesCount > 0) ", 영수증 사진 ${syncRes.imagesCount}장 다운로드" else ""
                     _uiState.update {
                         it.copy(
                             isGitHubSyncing = false,
-                            statusMessage = "GitHub에서 복원 완료! (총 ${count}개 데이터가 복원되었습니다)",
+                            statusMessage = "GitHub에서 복원 완료! (데이터 ${syncRes.recordsCount}건${imgText})",
                             isStatusError = false
                         )
                     }

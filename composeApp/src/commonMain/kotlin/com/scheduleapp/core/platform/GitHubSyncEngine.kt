@@ -1,9 +1,18 @@
 package com.scheduleapp.core.platform
 
+import com.scheduleapp.core.database.dao.CarBookDao
+
+data class SyncResult(
+    val recordsCount: Int,
+    val imagesCount: Int
+)
+
 class GitHubSyncEngine(
     private val httpEngine: PlatformHttpEngine,
     private val base64: PlatformBase64,
-    private val backupEngine: DatabaseBackupEngine
+    private val backupEngine: DatabaseBackupEngine,
+    private val fileStorage: PlatformFileStorage,
+    private val carBookDao: CarBookDao
 ) {
     suspend fun testConnection(pat: String, owner: String, repo: String): Result<String> = runCatching {
         val url = "https://api.github.com/repos/$owner/$repo"
@@ -28,7 +37,7 @@ class GitHubSyncEngine(
         repo: String,
         branch: String = "main",
         commitMessage: String = "backup: sync database snapshot via Schedule App"
-    ): Result<Int> = runCatching {
+    ): Result<SyncResult> = runCatching {
         val json = backupEngine.exportToJson()
         val snapshot = DatabaseBackupEngine.parseSnapshot(json)
 
@@ -66,11 +75,47 @@ class GitHubSyncEngine(
             body = putBody
         )
 
-        if (putResp.statusCode in 200..299) {
-            snapshot.totalRecords
-        } else {
+        if (putResp.statusCode !in 200..299) {
             throw IllegalStateException("GitHub 백업 업로드 실패 (HTTP ${putResp.statusCode}): ${putResp.body.take(200)}")
         }
+
+        // Upload receipt images that are not yet on GitHub
+        val receiptUris = snapshot.expenses.mapNotNull { it.receiptImageUri }.filter { it.isNotBlank() }.distinct()
+        var uploadedImagesCount = 0
+        for (uri in receiptUris) {
+            val fileName = fileStorage.getReceiptFileName(uri)
+            if (fileName.isNotBlank() && fileStorage.fileExists(uri)) {
+                val remotePath = "backup/receipts/$fileName"
+                val getImgUrl = "https://api.github.com/repos/$owner/$repo/contents/$remotePath?ref=$branch"
+                val getImgResp = httpEngine.get(getImgUrl, headers)
+                if (getImgResp.statusCode !in 200..299) {
+                    val bytes = fileStorage.readFileBytes(uri)
+                    if (bytes != null && bytes.isNotEmpty()) {
+                        val encodedImg = base64.encode(bytes)
+                        val putImgBody = buildString {
+                            append("{")
+                            append("\"message\": \"backup: upload receipt image $fileName\",")
+                            append("\"content\": \"${encodedImg}\",")
+                            append("\"branch\": \"${branch}\"")
+                            append("}")
+                        }
+                        val uploadImgResp = httpEngine.put(
+                            url = "https://api.github.com/repos/$owner/$repo/contents/$remotePath",
+                            headers = headers,
+                            body = putImgBody
+                        )
+                        if (uploadImgResp.statusCode in 200..299) {
+                            uploadedImagesCount++
+                        }
+                    }
+                }
+            }
+        }
+
+        SyncResult(
+            recordsCount = snapshot.totalRecords,
+            imagesCount = uploadedImagesCount
+        )
     }
 
     suspend fun pullBackup(
@@ -78,7 +123,7 @@ class GitHubSyncEngine(
         owner: String,
         repo: String,
         branch: String = "main"
-    ): Result<Int> = runCatching {
+    ): Result<SyncResult> = runCatching {
         val filePath = "backup/schedule_db.json"
         val apiUrl = "https://api.github.com/repos/$owner/$repo/contents/$filePath?ref=$branch"
 
@@ -104,6 +149,37 @@ class GitHubSyncEngine(
 
         val restoreResult = backupEngine.restoreFromJson(jsonString)
         val snapshot = restoreResult.getOrThrow()
-        snapshot.totalRecords
+
+        // Download missing receipt images from GitHub
+        var downloadedImagesCount = 0
+        for (expense in snapshot.expenses) {
+            val uri = expense.receiptImageUri
+            if (!uri.isNullOrBlank()) {
+                val fileName = fileStorage.getReceiptFileName(uri)
+                if (fileName.isNotBlank() && !fileStorage.fileExists(uri)) {
+                    val rawHeaders = mapOf(
+                        "Authorization" to "Bearer $pat",
+                        "Accept" to "application/vnd.github.v3.raw",
+                        "User-Agent" to "ScheduleApp-KMP"
+                    )
+                    val imgUrl = "https://api.github.com/repos/$owner/$repo/contents/backup/receipts/$fileName?ref=$branch"
+                    val byteResp = httpEngine.getBytes(imgUrl, rawHeaders)
+                    if (byteResp.statusCode in 200..299 && byteResp.bytes.isNotEmpty()) {
+                        val localPath = fileStorage.saveReceiptImage(fileName, byteResp.bytes)
+                        if (localPath != null) {
+                            if (localPath != expense.receiptImageUri) {
+                                carBookDao.updateExpense(expense.copy(receiptImageUri = localPath))
+                            }
+                            downloadedImagesCount++
+                        }
+                    }
+                }
+            }
+        }
+
+        SyncResult(
+            recordsCount = snapshot.totalRecords,
+            imagesCount = downloadedImagesCount
+        )
     }
 }
