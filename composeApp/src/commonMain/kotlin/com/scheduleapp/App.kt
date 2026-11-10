@@ -27,7 +27,7 @@ import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
 
 enum class AppTab(val title: String, val icon: String) {
-    SCHEDULE("캘린더/할일", "📅"),
+    SCHEDULE("홈/일정", "🏠"),
     CARBOOK("차계부", "🚗"),
     ROUTINE("루틴", "🔥"),
     TIMELINE("타임라인", "⏱"),

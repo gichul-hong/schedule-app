@@ -27,6 +27,7 @@
 - **2026-11-10**: Added `android.permission.INTERNET` and `android.permission.ACCESS_NETWORK_STATE` to `composeApp/src/androidMain/AndroidManifest.xml` to resolve SecurityException during GitHub cloud backup/sync.
 - **2026-11-10**: Fixed Calendar alignment and Sunday-first ordering across `CalendarScreen` (Monthly grid and Weekly strip now start with Sunday; Sunday colored in Red, Saturday colored in Blue, day of week labels added), fixed cross-month range loading in `CalendarViewModel`, and corrected `ScheduleDao` event overlap query (`startTime <= :end AND endTime >= :start`).
 - **2026-11-10**: Added automatic Receipt Image Cloud Sync to `GitHubSyncEngine` with `PlatformFileStorage` (expect/actual) and `PlatformHttpEngine.getBytes`: supports Push (detects local receipts, checks remote existence, base64 encodes & uploads to `backup/receipts/`) and Pull (downloads raw image bytes from GitHub, saves to app files dir, updates expense URI).
+- **2026-11-10**: Implemented Feature 1 & 4 - Home Smart Briefing Dashboard (`SmartBriefingCard` with dynamic seasonal weather & car wash index 0~100 score, vehicle maintenance tip, today's schedule summary with expandable/collapsible toggle) and Google Calendar style Monthly Schedule Grid (Korean public holidays auto-detection via `KoreanHolidaysEngine` with red highlighting & holiday labels, up to 2 colored pill event badges with category colors per day cell, and +N indicator).
 
 
 

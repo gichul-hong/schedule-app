@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.scheduleapp.core.util.DateTimeUtils
+import com.scheduleapp.core.util.KoreanHolidaysEngine
 import com.scheduleapp.domain.calendar.model.ScheduleEvent
 import com.scheduleapp.features.calendar.viewmodel.CalendarState
 import com.scheduleapp.features.calendar.viewmodel.CalendarViewMode
@@ -54,6 +55,16 @@ fun CalendarScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(modifier = Modifier.height(8.dp))
+
+            // Home Smart Briefing Dashboard
+            val todayStart = remember { DateTimeUtils.startOfDayMillis(DateTimeUtils.today()) }
+            val todayEnd = remember { DateTimeUtils.endOfDayMillis(DateTimeUtils.today()) }
+            val todayEvents = remember(state.rangeEvents) {
+                state.rangeEvents.filter { it.startTime <= todayEnd && it.endTime >= todayStart }
+            }
+            SmartBriefingCard(todayEvents = todayEvents)
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Month navigation & View mode switcher
             CalendarHeader(
@@ -270,7 +281,6 @@ private fun MonthlyCalendarGrid(
     // Sunday first: 일, 월, 화, 수, 목, 금, 토
     val weekdayHeaders = listOf("일", "월", "화", "수", "목", "금", "토")
     val firstDayOfMonth = LocalDate(currentMonth.year, currentMonth.monthNumber, 1)
-    // Sunday-first offset: Sunday (7) -> 0, Monday (1) -> 1, ..., Saturday (6) -> 6
     val startDayOffset = firstDayOfMonth.dayOfWeek.isoDayNumber % 7
     val totalDays = DateTimeUtils.endOfMonth(currentMonth.year, currentMonth.monthNumber).dayOfMonth
 
@@ -279,7 +289,7 @@ private fun MonthlyCalendarGrid(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(modifier = Modifier.padding(8.dp)) {
+        Column(modifier = Modifier.padding(6.dp)) {
             // Weekday labels
             Row(modifier = Modifier.fillMaxWidth()) {
                 weekdayHeaders.forEachIndexed { idx, label ->
@@ -299,7 +309,7 @@ private fun MonthlyCalendarGrid(
                 }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             // Calendar day cells
             val totalCells = (startDayOffset + totalDays + 6) / 7 * 7
@@ -315,57 +325,104 @@ private fun MonthlyCalendarGrid(
                             val isToday = thisDate == DateTimeUtils.today()
                             val dayStart = DateTimeUtils.startOfDayMillis(thisDate)
                             val dayEnd = DateTimeUtils.endOfDayMillis(thisDate)
-                            val hasEvents = events.any { it.startTime <= dayEnd && it.endTime >= dayStart }
+                            val holiday = KoreanHolidaysEngine.getHoliday(thisDate)
+                            val isHoliday = holiday != null
+                            val dayEvents = events.filter { it.startTime <= dayEnd && it.endTime >= dayStart }
 
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .aspectRatio(1f)
-                                    .padding(2.dp)
-                                    .clip(RoundedCornerShape(8.dp))
+                                    .height(64.dp)
+                                    .padding(1.dp)
+                                    .clip(RoundedCornerShape(6.dp))
                                     .background(
                                         when {
-                                            isSelected -> MaterialTheme.colorScheme.primary
-                                            isToday -> MaterialTheme.colorScheme.primaryContainer
+                                            isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                                            isToday -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f)
                                             else -> Color.Transparent
                                         }
                                     )
-                                    .clickable { onDateSelected(thisDate) },
-                                contentAlignment = Alignment.Center
+                                    .then(
+                                        if (isSelected) Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(6.dp))
+                                        else Modifier
+                                    )
+                                    .clickable { onDateSelected(thisDate) }
+                                    .padding(horizontal = 2.dp, vertical = 2.dp)
                             ) {
                                 Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    Text(
-                                        text = "$dayNumber",
-                                        fontSize = 13.sp,
-                                        fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
-                                        color = when {
-                                            isSelected -> MaterialTheme.colorScheme.onPrimary
-                                            isToday -> MaterialTheme.colorScheme.onPrimaryContainer
-                                            col == 0 -> Color(0xFFE53935) // Sunday: Red
-                                            col == 6 -> Color(0xFF1E88E5) // Saturday: Blue
-                                            else -> MaterialTheme.colorScheme.onSurface
-                                        }
-                                    )
-                                    if (hasEvents) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(4.dp)
-                                                .clip(CircleShape)
-                                                .background(
-                                                    if (isSelected) MaterialTheme.colorScheme.onPrimary
-                                                    else MaterialTheme.colorScheme.primary
-                                                )
+                                    // Date number & Holiday name row
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Text(
+                                            text = "$dayNumber",
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Medium,
+                                            color = when {
+                                                isHoliday || col == 0 -> Color(0xFFE53935) // Red for Sunday / Holiday
+                                                col == 6 -> Color(0xFF1E88E5) // Blue for Saturday
+                                                else -> MaterialTheme.colorScheme.onSurface
+                                            }
                                         )
-                                    } else {
-                                        Spacer(modifier = Modifier.height(4.dp))
+                                    }
+
+                                    if (holiday != null) {
+                                        Text(
+                                            text = holiday.name,
+                                            fontSize = 7.5.sp,
+                                            color = Color(0xFFE53935),
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(1.dp))
+
+                                    // Event Mini Color Bars
+                                    val visibleEvents = dayEvents.take(2)
+                                    visibleEvents.forEach { ev ->
+                                        val badgeColor = when (ev.category) {
+                                            "WORK" -> Color(0xFF1E88E5)
+                                            "PERSONAL" -> Color(0xFF43A047)
+                                            "CAR", "CAR_MAINTENANCE" -> Color(0xFFFB8C00)
+                                            else -> MaterialTheme.colorScheme.primary
+                                        }
+                                        Surface(
+                                            color = badgeColor.copy(alpha = 0.85f),
+                                            shape = RoundedCornerShape(2.dp),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 0.5.dp)
+                                        ) {
+                                            Text(
+                                                text = ev.title,
+                                                color = Color.White,
+                                                fontSize = 7.5.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                modifier = Modifier.padding(horizontal = 2.dp, vertical = 0.5.dp)
+                                            )
+                                        }
+                                    }
+
+                                    if (dayEvents.size > 2) {
+                                        Text(
+                                            text = "+${dayEvents.size - 2}",
+                                            fontSize = 7.5.sp,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.Bold
+                                        )
                                     }
                                 }
                             }
                         } else {
-                            Box(modifier = Modifier.weight(1f).aspectRatio(1f))
+                            Box(modifier = Modifier.weight(1f).height(64.dp))
                         }
                     }
                 }
@@ -400,13 +457,15 @@ private fun WeeklyCalendarStrip(
             val dayStart = DateTimeUtils.startOfDayMillis(date)
             val dayEnd = DateTimeUtils.endOfDayMillis(date)
             val hasEvents = events.any { it.startTime <= dayEnd && it.endTime >= dayStart }
+            val holiday = KoreanHolidaysEngine.getHoliday(date)
+            val isHoliday = holiday != null
 
             Column(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                     .clickable { onDateSelected(date) }
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                    .padding(horizontal = 6.dp, vertical = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -414,24 +473,33 @@ private fun WeeklyCalendarStrip(
                     fontSize = 11.sp,
                     color = when {
                         isSelected -> MaterialTheme.colorScheme.onPrimary
-                        index == 0 -> Color(0xFFE53935) // Sunday: Red
+                        isHoliday || index == 0 -> Color(0xFFE53935) // Sunday / Holiday: Red
                         index == 6 -> Color(0xFF1E88E5) // Saturday: Blue
                         else -> MaterialTheme.colorScheme.onSurfaceVariant
                     }
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "${date.dayOfMonth}",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = when {
                         isSelected -> MaterialTheme.colorScheme.onPrimary
-                        index == 0 -> Color(0xFFE53935) // Sunday: Red
-                        index == 6 -> Color(0xFF1E88E5) // Saturday: Blue
+                        isHoliday || index == 0 -> Color(0xFFE53935)
+                        index == 6 -> Color(0xFF1E88E5)
                         else -> MaterialTheme.colorScheme.onSurface
                     }
                 )
-                if (hasEvents) {
+                if (holiday != null) {
+                    Text(
+                        text = holiday.name,
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else Color(0xFFE53935),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                } else if (hasEvents) {
                     Box(
                         modifier = Modifier
                             .size(4.dp)
@@ -441,6 +509,8 @@ private fun WeeklyCalendarStrip(
                                 else MaterialTheme.colorScheme.primary
                             )
                     )
+                } else {
+                    Spacer(modifier = Modifier.height(4.dp))
                 }
             }
         }
@@ -449,6 +519,7 @@ private fun WeeklyCalendarStrip(
 
 @Composable
 private fun DailyHeaderCard(selectedDate: LocalDate) {
+    val holiday = KoreanHolidaysEngine.getHoliday(selectedDate)
     val dayOfWeekKorean = when (selectedDate.dayOfWeek.isoDayNumber) {
         7 -> "일요일"
         1 -> "월요일"
@@ -465,12 +536,30 @@ private fun DailyHeaderCard(selectedDate: LocalDate) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "${selectedDate.year}년 ${selectedDate.monthNumber}월 ${selectedDate.dayOfMonth}일 ($dayOfWeekKorean)",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "${selectedDate.year}년 ${selectedDate.monthNumber}월 ${selectedDate.dayOfMonth}일 ($dayOfWeekKorean)",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                if (holiday != null) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Surface(
+                        color = Color(0xFFE53935).copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            text = holiday.name,
+                            color = Color(0xFFE53935),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "오늘의 집중 일정 뷰",
                 style = MaterialTheme.typography.bodySmall,
